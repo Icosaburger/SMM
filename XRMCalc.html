@@ -1,0 +1,164 @@
+<div style="display: flex; flex-wrap: wrap; justify-content: center; gap: 20px; width: 100%; padding: 20px 0; font-family: 'Segoe UI', sans-serif; color: #172b4d;">
+
+    <div style="padding: 20px; border: 1px solid #dfe1e6; border-radius: 10px; background: #ffffff; width: 440px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
+        <h3 style="margin-top: 0; color: #0052cc; border-bottom: 2px solid #ebecf0; padding-bottom: 10px; text-align: center;">Nano-CT Parameter Tool</h3>
+        
+        <div style="margin-bottom: 15px;">
+            <label style="font-weight: bold; display: block; margin-bottom: 5px;">1. Select Detector</label>
+            <select id="camSelect" style="width: 100%; padding: 8px;" onchange="handleCamChange()">
+                <option value="0">Cam 1 (3300px, 4.5µm Physical)</option>
+                <option value="1">Cam 2 (4008px, 9.0µm Physical)</option>
+                <option value="2">Cam 3 (4008px, 18.0µm Physical)</option>
+                <option value="3">Cam 4 (3072px, 75.0µm Physical)</option>
+            </select>
+        </div>
+
+        <div style="margin-bottom: 15px;">
+            <label style="font-weight: bold; display: block; margin-bottom: 5px;">2. Binning Mode</label>
+            <select id="binSelect" style="width: 100%; padding: 8px;" onchange="handleBinChange()">
+                <option value="1">Binning 1</option>
+                <option value="2">Binning 2</option>
+                <option value="4">Binning 4</option>
+            </select>
+        </div>
+
+        <div style="margin-bottom: 20px;">
+            <label style="font-weight: bold; display: block; margin-bottom: 5px;">3. Target Px Size: <span id="targetVal" style="color: #0052cc;">2.00</span> µm</label>
+            <input type="range" id="pxSlider" min="0.01" max="1000" step="0.01" value="2.00" style="width: 100%; cursor: pointer;" oninput="updateCT()">
+            <div style="display: flex; justify-content: space-between; margin-top: 5px;">
+                <small id="minMsg" style="color: #6b778c; font-size: 11px;">Min: --</small>
+                <small id="maxMsg" style="color: #6b778c; font-size: 11px;">Max: --</small>
+            </div>
+        </div>
+
+        <div style="background: #f4f5f7; padding: 15px; border-radius: 6px; border-left: 5px solid #0052cc;">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                <span>Effective Res:</span>
+                <span id="effRes" style="font-weight: bold;">3300 px</span>
+            </div>
+            <hr style="border: 0; border-top: 1px solid #dfe1e6;">
+            <div style="text-align: center; margin-top: 10px;">
+                <span style="display: block; font-size: 11px; color: #6b778c; text-transform: uppercase;">Calculated Horizontal FOV</span>
+                <strong style="font-size: 26px; color: #d04437;"><span id="finalFov">6.60</span> mm</strong>
+                <div id="limitWarning" style="font-size: 11px; color: #de350b; font-weight: bold; visibility: hidden;">CLIPPED TO MAX APERTURE</div>
+            </div>
+        </div>
+    </div>
+
+    <div style="padding: 20px; border: 1px solid #dfe1e6; border-radius: 10px; background: #ffffff; width: 440px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
+        <h3 style="margin-top: 0; color: #0052cc; border-bottom: 2px solid #ebecf0; padding-bottom: 10px; text-align: center;">Feature Resolution Guide</h3>
+        <table style="width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 14px;">
+            <thead>
+                <tr style="background: #f4f5f7; text-align: left;">
+                    <th style="padding: 10px; border-bottom: 2px solid #dfe1e6;">Metric</th>
+                    <th style="padding: 10px; border-bottom: 2px solid #dfe1e6;">Estimated Size</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td style="padding: 12px 10px; border-bottom: 1px solid #f0f0f0; font-weight: bold;">Current Pixel Size</td>
+                    <td style="padding: 12px 10px; border-bottom: 1px solid #f0f0f0; color: #0052cc; font-weight: bold;"><span id="tablePx">2.00</span> µm</td>
+                </tr>
+                <tr>
+                    <td style="padding: 12px 10px; border-bottom: 1px solid #f0f0f0;">
+                        Resolvable Feature<br>
+                        <small style="color: #6b778c;">(2 - 5x pixel size)</small>
+                    </td>
+                    <td style="padding: 12px 10px; border-bottom: 1px solid #f0f0f0;"><span id="featSize">4.0 - 10.0</span> µm</td>
+                </tr>
+                <tr>
+                    <td style="padding: 12px 10px; border-bottom: 1px solid #f0f0f0;">
+                        Quantifiable Feature<br>
+                        <small style="color: #6b778c;">(5 - 20x pixel size)</small>
+                    </td>
+                    <td style="padding: 12px 10px; border-bottom: 1px solid #f0f0f0;"><span id="quantSize">10.0 - 40.0</span> µm</td>
+                </tr>
+            </tbody>
+        </table>
+        <p style="font-size: 11px; color: #6b778c; margin-top: 20px; line-height: 1.4;">
+            <em>Note: Resolvable features are visible but may suffer from aliasing. Quantifiable features have enough voxels for accurate volumetric measurement.</em>
+        </p>
+    </div>
+
+</div>
+
+<script>
+const cams = [
+    { res: 3300, px: 4.5, min: 0.06, maxFov: 8 },
+    { res: 4008, px: 9.0, min: 0.12, maxFov: 22 },
+    { res: 4008, px: 18.0, min: 0.25, maxFov: 45 },
+    { res: 3072, px: 75.0, min: 2.25, maxFov: 140 }
+];
+
+let lastBin = 1;
+
+function handleCamChange() {
+    const camIdx = document.getElementById('camSelect').value;
+    const bin = parseInt(document.getElementById('binSelect').value);
+    const slider = document.getElementById('pxSlider');
+    const cam = cams[camIdx];
+    
+    const newMin = cam.min * bin;
+    const newMax = (cam.px * bin) / 2;
+    
+    slider.min = 0.01;
+    slider.max = 5000;
+    
+    let currentVal = parseFloat(slider.value);
+    if (currentVal < newMin) slider.value = newMin;
+    if (currentVal > newMax) slider.value = newMax;
+    
+    slider.min = newMin;
+    slider.max = newMax;
+    slider.step = (camIdx == 3) ? "0.05" : "0.01";
+    
+    lastBin = bin;
+    updateCT();
+}
+
+function handleBinChange() {
+    const currentBin = parseInt(document.getElementById('binSelect').value);
+    const slider = document.getElementById('pxSlider');
+    const oldVal = parseFloat(slider.value);
+    
+    const ratio = currentBin / lastBin;
+    slider.value = (oldVal * ratio).toFixed(2);
+    
+    lastBin = currentBin;
+    handleCamChange();
+}
+
+function updateCT() {
+    const camIdx = document.getElementById('camSelect').value;
+    const bin = parseInt(document.getElementById('binSelect').value);
+    const slider = document.getElementById('pxSlider');
+    const cam = cams[camIdx];
+
+    const desiredPx = parseFloat(slider.value);
+    const effectiveRes = cam.res / bin;
+
+    let calcFov = (desiredPx * effectiveRes) / 1000;
+
+    let warning = document.getElementById('limitWarning');
+    if (calcFov > cam.maxFov) {
+        calcFov = cam.maxFov;
+        warning.style.visibility = "visible";
+    } else {
+        warning.style.visibility = "hidden";
+    }
+
+    // Update UI elements
+    document.getElementById('targetVal').innerText = desiredPx.toFixed(2);
+    document.getElementById('minMsg').innerText = "Min: " + parseFloat(slider.min).toFixed(2) + "µm";
+    document.getElementById('maxMsg').innerText = "Max: " + parseFloat(slider.max).toFixed(2) + "µm";
+    document.getElementById('effRes').innerText = Math.round(effectiveRes) + " px";
+    document.getElementById('finalFov').innerText = calcFov.toFixed(3);
+
+    // Update Table Data
+    document.getElementById('tablePx').innerText = desiredPx.toFixed(2);
+    document.getElementById('featSize').innerText = (desiredPx * 2).toFixed(2) + " - " + (desiredPx * 5).toFixed(2);
+    document.getElementById('quantSize').innerText = (desiredPx * 5).toFixed(2) + " - " + (desiredPx * 20).toFixed(2);
+}
+
+handleCamChange();
+</script>
