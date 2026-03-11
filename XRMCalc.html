@@ -40,8 +40,8 @@
         </div>
 
         <div style="margin-bottom: 20px;">
-            <label style="font-weight: bold; display: block; margin-bottom: 5px;">3. Target Px Size: <span id="targetVal" style="color: #0052cc;">10.00</span> µm</label>
-            <input type="range" id="pxSlider" min="0.01" max="1000" step="0.01" value="10.00" style="width: 100%; cursor: pointer;" oninput="updateCT()">
+            <label style="font-weight: bold; display: block; margin-bottom: 5px;">3. Target Px Size: <span id="targetVal" style="color: #0052cc;">10.0</span> µm</label>
+            <input type="range" id="pxSlider" min="0.5" max="1000" step="0.5" value="10.0" style="width: 100%; cursor: pointer;" oninput="updateCT()">
             <div style="display: flex; justify-content: space-between; margin-top: 5px;">
                 <small id="minMsg" style="color: #6b778c; font-size: 11px;">Min: --</small>
                 <small id="maxMsg" style="color: #6b778c; font-size: 11px;">Max: --</small>
@@ -50,19 +50,19 @@
 
         <div style="background: #f4f5f7; padding: 15px; border-radius: 6px; border-left: 5px solid #0052cc;">
             <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
-                <span>Effective Res (H):</span>
-                <span id="effRes" style="font-weight: bold;">2004 px</span>
+                <span>Effective Res (H x V):</span>
+                <span id="effRes" style="font-weight: bold;">2004 x 1336 px</span>
             </div>
             <hr style="border: 0; border-top: 1px solid #dfe1e6;">
             
             <div style="display: flex; justify-content: space-around; margin-top: 10px;">
                 <div style="text-align: center;">
                     <span style="display: block; font-size: 10px; color: #6b778c; text-transform: uppercase;">Horizontal FOV</span>
-                    <strong style="font-size: 22px; color: #d04437;"><span id="finalFov">20.040</span> mm</strong>
+                    <strong style="font-size: 22px; color: #d04437;"><span id="finalFov">20.0</span> mm</strong>
                 </div>
                 <div style="text-align: center; border-left: 1px solid #dfe1e6; padding-left: 15px;">
                     <span style="display: block; font-size: 10px; color: #6b778c; text-transform: uppercase;">Usable Vertical FOV</span>
-                    <strong style="font-size: 22px; color: #0052cc;"><span id="finalVFov">10.688</span> mm</strong>
+                    <strong style="font-size: 22px; color: #0052cc;"><span id="finalVFov">10.7</span> mm</strong>
                 </div>
             </div>
             
@@ -81,13 +81,13 @@
             <thead>
                 <tr>
                     <th>Metric</th>
-                    <th>Estimated Size</th>
+                    <th>Estimated Value</th>
                 </tr>
             </thead>
             <tbody>
                 <tr>
                     <td style="font-weight: bold;">Current Pixel Size</td>
-                    <td style="color: #0052cc; font-weight: bold;"><span id="tablePx">10.00</span> µm</td>
+                    <td style="color: #0052cc; font-weight: bold;"><span id="tablePx">10.0</span> µm</td>
                 </tr>
                 <tr>
                     <td>Resolvable Feature<br><small style="color: #6b778c;">(2 - 5x pixel size)</small></td>
@@ -105,10 +105,10 @@
 
 <script>
 const cams = [
-    { resH: 3300, resV: 2470, px: 4.5, min: 0.06, maxFov: 8 },
-    { resH: 4008, resV: 2672, px: 9.0, min: 0.12, maxFov: 22 },
-    { resH: 4008, resV: 2672, px: 18.0, min: 0.25, maxFov: 45 },
-    { resH: 3072, resV: 1944, px: 75.0, min: 2.25, maxFov: 140 }
+    { resH: 3300, resV: 2470, px: 4.5, min: 0.06, maxFov: 8, step: 0.05 },
+    { resH: 4008, resV: 2672, px: 9.0, min: 0.12, maxFov: 22, step: 0.1 },
+    { resH: 4008, resV: 2672, px: 18.0, min: 0.25, maxFov: 45, step: 0.5 },
+    { resH: 3072, resV: 1944, px: 75.0, min: 2.25, maxFov: 140, step: 1.0 }
 ];
 
 let lastBin = 1;
@@ -131,7 +131,7 @@ function handleCamChange() {
     
     slider.min = newMin;
     slider.max = newMax;
-    slider.step = (camIdx == 3) ? "0.05" : "0.01";
+    slider.step = cam.step;
     
     lastBin = bin;
     updateCT();
@@ -168,24 +168,23 @@ function updateCT() {
         warning.style.visibility = "hidden";
     }
 
-    document.getElementById('targetVal').innerText = desiredPx.toFixed(2);
-    document.getElementById('effRes').innerText = Math.round(effResH) + " px";
-    document.getElementById('finalFov').innerText = calcFovH.toFixed(3);
-    document.getElementById('finalVFov').innerText = calcFovV.toFixed(3);
-    document.getElementById('minMsg').innerText = "Min: " + parseFloat(slider.min).toFixed(2) + "µm";
-    document.getElementById('maxMsg').innerText = "Max: " + parseFloat(slider.max).toFixed(2) + "µm";
+    document.getElementById('targetVal').innerText = desiredPx.toFixed(1);
+    document.getElementById('effRes').innerText = Math.round(effResH) + " x " + Math.round(effResV) + " px";
+    document.getElementById('finalFov').innerText = calcFovH.toFixed(1);
+    document.getElementById('finalVFov').innerText = calcFovV.toFixed(1);
+    document.getElementById('minMsg').innerText = "Min: " + parseFloat(slider.min).toFixed(1) + "µm";
+    document.getElementById('maxMsg').innerText = "Max: " + parseFloat(slider.max).toFixed(1) + "µm";
 
-    document.getElementById('tablePx').innerText = desiredPx.toFixed(2);
-    document.getElementById('featSize').innerText = (desiredPx * 2).toFixed(2) + " - " + (desiredPx * 5).toFixed(2);
-    document.getElementById('quantSize').innerText = (desiredPx * 5).toFixed(2) + " - " + (desiredPx * 20).toFixed(2);
+    document.getElementById('tablePx').innerText = desiredPx.toFixed(1);
+    document.getElementById('featSize').innerText = (desiredPx * 2).toFixed(1) + " - " + (desiredPx * 5).toFixed(1);
+    document.getElementById('quantSize').innerText = (desiredPx * 5).toFixed(1) + " - " + (desiredPx * 20).toFixed(1);
 }
 
-// SET DEFAULTS ON LOAD
 window.onload = function() {
-    document.getElementById('camSelect').value = "2"; // Cam 3
-    document.getElementById('binSelect').value = "2"; // Bin 2
-    document.getElementById('pxSlider').value = "10.00"; // 10um
-    handleCamChange(); // Trigger calculations for these values
+    document.getElementById('camSelect').value = "2"; 
+    document.getElementById('binSelect').value = "2"; 
+    document.getElementById('pxSlider').value = "10.0"; 
+    handleCamChange(); 
 };
 </script>
 </body>
