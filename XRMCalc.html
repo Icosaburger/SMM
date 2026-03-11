@@ -5,43 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>XRM Parameter Tool</title>
     <style>
-        html, body {
-            margin: 0;
-            padding: 0;
-            overflow-x: hidden;
-            height: auto;
-            background-color: transparent;
-        }
-        .main-wrapper {
-            display: flex; 
-            flex-wrap: wrap; 
-            justify-content: center; 
-            gap: 20px; 
-            width: 100%; 
-            padding: 20px;
-            box-sizing: border-box;
-            font-family: 'Segoe UI', sans-serif;
-            color: #172b4d;
-        }
-        input[type=range] {
-            accent-color: #0052cc;
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 10px;
-            font-size: 14px;
-        }
-        th {
-            background: #f4f5f7;
-            text-align: left;
-            padding: 10px;
-            border-bottom: 2px solid #dfe1e6;
-        }
-        td {
-            padding: 12px 10px;
-            border-bottom: 1px solid #f0f0f0;
-        }
+        html, body { margin: 0; padding: 0; overflow-x: hidden; height: auto; background-color: transparent; }
+        .main-wrapper { display: flex; flex-wrap: wrap; justify-content: center; gap: 20px; width: 100%; padding: 20px; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; color: #172b4d; }
+        input[type=range] { accent-color: #0052cc; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 14px; }
+        th { background: #f4f5f7; text-align: left; padding: 10px; border-bottom: 2px solid #dfe1e6; }
+        td { padding: 12px 10px; border-bottom: 1px solid #f0f0f0; }
     </style>
 </head>
 <body>
@@ -98,7 +67,7 @@
             </div>
             
             <div id="limitWarning" style="text-align: center; margin-top: 10px; font-size: 11px; color: #de350b; font-weight: bold; visibility: hidden;">
-                CLIPPED TO MAX APERTURE
+                MAX APERTURE REACHED
             </div>
             <div style="text-align: center; font-size: 9px; color: #6b778c; margin-top: 5px;">
                 *Vertical FOV uses 80% of pixels to avoid cone-beam artifacts.
@@ -130,9 +99,6 @@
                 </tr>
             </tbody>
         </table>
-        <p style="font-size: 11px; color: #6b778c; margin-top: 20px; line-height: 1.4;">
-            <em>Note: Resolvable features are visible but may suffer from aliasing. Quantifiable features provide enough voxels for volumetric analysis.</em>
-        </p>
     </div>
 
 </div>
@@ -154,10 +120,11 @@ function handleCamChange() {
     const cam = cams[camIdx];
     
     const newMin = cam.min * bin;
-    const newMax = (cam.px * bin) / 2;
+    // Calculate newMax so the slider can reach the hardware FOV limit
+    const newMax = (cam.maxFov * 1000) / (cam.resH / bin);
     
     slider.min = 0.01;
-    slider.max = 5000;
+    slider.max = 5000; // Unlock
     
     let currentVal = parseFloat(slider.value);
     if (currentVal < newMin) slider.value = newMin;
@@ -175,10 +142,8 @@ function handleBinChange() {
     const currentBin = parseInt(document.getElementById('binSelect').value);
     const slider = document.getElementById('pxSlider');
     const oldVal = parseFloat(slider.value);
-    
     const ratio = currentBin / lastBin;
     slider.value = (oldVal * ratio).toFixed(2);
-    
     lastBin = currentBin;
     handleCamChange();
 }
@@ -191,22 +156,20 @@ function updateCT() {
 
     const desiredPx = parseFloat(slider.value);
     const effResH = cam.resH / bin;
-    const effResV = (cam.resV / bin) * 0.8; // 80% usable rule
+    const effResV = cam.resV / bin;
 
     let calcFovH = (desiredPx * effResH) / 1000;
-    let calcFovV = (desiredPx * effResV) / 1000;
+    let calcFovV = (desiredPx * effResV * 0.8) / 1000; // 80% usable
 
     let warning = document.getElementById('limitWarning');
-    if (calcFovH > cam.maxFov) {
-        const clipRatio = cam.maxFov / calcFovH;
+    // Horizontal Clipping Check
+    if (calcFovH >= cam.maxFov - 0.001) {
         calcFovH = cam.maxFov;
-        calcFovV = calcFovV * clipRatio;
         warning.style.visibility = "visible";
     } else {
         warning.style.visibility = "hidden";
     }
 
-    // Update UI
     document.getElementById('targetVal').innerText = desiredPx.toFixed(2);
     document.getElementById('effRes').innerText = Math.round(effResH) + " px";
     document.getElementById('finalFov').innerText = calcFovH.toFixed(3);
@@ -214,7 +177,6 @@ function updateCT() {
     document.getElementById('minMsg').innerText = "Min: " + parseFloat(slider.min).toFixed(2) + "µm";
     document.getElementById('maxMsg').innerText = "Max: " + parseFloat(slider.max).toFixed(2) + "µm";
 
-    // Update Table
     document.getElementById('tablePx').innerText = desiredPx.toFixed(2);
     document.getElementById('featSize').innerText = (desiredPx * 2).toFixed(2) + " - " + (desiredPx * 5).toFixed(2);
     document.getElementById('quantSize').innerText = (desiredPx * 5).toFixed(2) + " - " + (desiredPx * 20).toFixed(2);
@@ -222,6 +184,5 @@ function updateCT() {
 
 handleCamChange();
 </script>
-
 </body>
 </html>
