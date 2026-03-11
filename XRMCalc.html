@@ -40,8 +40,8 @@
         </div>
 
         <div style="margin-bottom: 20px;">
-            <label style="font-weight: bold; display: block; margin-bottom: 5px;">3. Target Px Size: <span id="targetVal" style="color: #0052cc;">2.00</span> µm</label>
-            <input type="range" id="pxSlider" min="0.01" max="1000" step="0.01" value="2.00" style="width: 100%; cursor: pointer;" oninput="updateCT()">
+            <label style="font-weight: bold; display: block; margin-bottom: 5px;">3. Target Px Size: <span id="targetVal" style="color: #0052cc;">10.00</span> µm</label>
+            <input type="range" id="pxSlider" min="0.01" max="1000" step="0.01" value="10.00" style="width: 100%; cursor: pointer;" oninput="updateCT()">
             <div style="display: flex; justify-content: space-between; margin-top: 5px;">
                 <small id="minMsg" style="color: #6b778c; font-size: 11px;">Min: --</small>
                 <small id="maxMsg" style="color: #6b778c; font-size: 11px;">Max: --</small>
@@ -51,18 +51,18 @@
         <div style="background: #f4f5f7; padding: 15px; border-radius: 6px; border-left: 5px solid #0052cc;">
             <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
                 <span>Effective Res (H):</span>
-                <span id="effRes" style="font-weight: bold;">3300 px</span>
+                <span id="effRes" style="font-weight: bold;">2004 px</span>
             </div>
             <hr style="border: 0; border-top: 1px solid #dfe1e6;">
             
             <div style="display: flex; justify-content: space-around; margin-top: 10px;">
                 <div style="text-align: center;">
                     <span style="display: block; font-size: 10px; color: #6b778c; text-transform: uppercase;">Horizontal FOV</span>
-                    <strong style="font-size: 22px; color: #d04437;"><span id="finalFov">6.60</span> mm</strong>
+                    <strong style="font-size: 22px; color: #d04437;"><span id="finalFov">20.040</span> mm</strong>
                 </div>
                 <div style="text-align: center; border-left: 1px solid #dfe1e6; padding-left: 15px;">
                     <span style="display: block; font-size: 10px; color: #6b778c; text-transform: uppercase;">Usable Vertical FOV</span>
-                    <strong style="font-size: 22px; color: #0052cc;"><span id="finalVFov">4.94</span> mm</strong>
+                    <strong style="font-size: 22px; color: #0052cc;"><span id="finalVFov">10.688</span> mm</strong>
                 </div>
             </div>
             
@@ -87,15 +87,15 @@
             <tbody>
                 <tr>
                     <td style="font-weight: bold;">Current Pixel Size</td>
-                    <td style="color: #0052cc; font-weight: bold;"><span id="tablePx">2.00</span> µm</td>
+                    <td style="color: #0052cc; font-weight: bold;"><span id="tablePx">10.00</span> µm</td>
                 </tr>
                 <tr>
                     <td>Resolvable Feature<br><small style="color: #6b778c;">(2 - 5x pixel size)</small></td>
-                    <td><span id="featSize">4.0 - 10.0</span> µm</td>
+                    <td><span id="featSize">20.0 - 50.0</span> µm</td>
                 </tr>
                 <tr>
                     <td>Quantifiable Feature<br><small style="color: #6b778c;">(5 - 20x pixel size)</small></td>
-                    <td><span id="quantSize">10.0 - 40.0</span> µm</td>
+                    <td><span id="quantSize">50.0 - 200.0</span> µm</td>
                 </tr>
             </tbody>
         </table>
@@ -120,15 +120,14 @@ function handleCamChange() {
     const cam = cams[camIdx];
     
     const newMin = cam.min * bin;
-    // Calculate newMax so the slider can reach the hardware FOV limit
     const newMax = (cam.maxFov * 1000) / (cam.resH / bin);
     
     slider.min = 0.01;
-    slider.max = 5000; // Unlock
+    slider.max = 5000; 
     
     let currentVal = parseFloat(slider.value);
-    if (currentVal < newMin) slider.value = newMin;
-    if (currentVal > newMax) slider.value = newMax;
+    if (currentVal < newMin) slider.value = newMin.toFixed(2);
+    if (currentVal > newMax) slider.value = newMax.toFixed(2);
     
     slider.min = newMin;
     slider.max = newMax;
@@ -159,10 +158,9 @@ function updateCT() {
     const effResV = cam.resV / bin;
 
     let calcFovH = (desiredPx * effResH) / 1000;
-    let calcFovV = (desiredPx * effResV * 0.8) / 1000; // 80% usable
+    let calcFovV = (desiredPx * effResV * 0.8) / 1000; 
 
     let warning = document.getElementById('limitWarning');
-    // Horizontal Clipping Check
     if (calcFovH >= cam.maxFov - 0.001) {
         calcFovH = cam.maxFov;
         warning.style.visibility = "visible";
@@ -182,7 +180,13 @@ function updateCT() {
     document.getElementById('quantSize').innerText = (desiredPx * 5).toFixed(2) + " - " + (desiredPx * 20).toFixed(2);
 }
 
-handleCamChange();
+// SET DEFAULTS ON LOAD
+window.onload = function() {
+    document.getElementById('camSelect').value = "2"; // Cam 3
+    document.getElementById('binSelect').value = "2"; // Bin 2
+    document.getElementById('pxSlider').value = "10.00"; // 10um
+    handleCamChange(); // Trigger calculations for these values
+};
 </script>
 </body>
 </html>
