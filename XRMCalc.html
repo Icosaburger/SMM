@@ -120,18 +120,14 @@ function handleCamChange() {
     const cam = cams[camIdx];
     
     const newMin = cam.min * bin;
-    const newMax = (cam.maxFov * 1000) / (cam.resH / bin);
+    const rawMax = (cam.maxFov * 1000) / (cam.resH / bin);
     
-    // Temporarily unlock slider to set values freely
-    slider.min = 0.001;
-    slider.max = 10000;
-    
-    let currentVal = parseFloat(slider.value);
-    if (currentVal < newMin) slider.value = newMin;
-    if (currentVal > newMax) slider.value = newMax;
-    
+    // We round the slider's MAX down to the nearest perfect step
+    // This keeps the slider's internal grid aligned to even numbers
+    const stepAlignedMax = Math.floor(rawMax / cam.step) * cam.step;
+
     slider.min = newMin;
-    slider.max = newMax;
+    slider.max = stepAlignedMax;
     slider.step = cam.step;
     
     lastBin = bin;
@@ -154,38 +150,39 @@ function updateCT() {
     const slider = document.getElementById('pxSlider');
     const cam = cams[camIdx];
 
-    let desiredPx = parseFloat(slider.value);
+    let displayPx = parseFloat(slider.value);
     const effResH = cam.resH / bin;
     const effResV = cam.resV / bin;
 
-    // STEP BYPASS: If slider is at the physical max, force the precise target pixel size
     const trueMaxPx = (cam.maxFov * 1000) / effResH;
-    if (desiredPx > (trueMaxPx - cam.step)) {
-        desiredPx = trueMaxPx;
-    }
-
-    let calcFovH = (desiredPx * effResH) / 1000;
-    let calcFovV = (desiredPx * effResV * 0.8) / 1000; 
-
+    
+    // Check if slider is at its own maximum
+    // If it is, we use the "True Max" for calculations/display
+    let calculationPx = displayPx;
     let warning = document.getElementById('limitWarning');
-    // Display check for the warning label
-    if (calcFovH >= cam.maxFov - 0.01) {
-        calcFovH = cam.maxFov;
+
+    if (displayPx >= parseFloat(slider.max)) {
+        calculationPx = trueMaxPx;
+        displayPx = trueMaxPx; // Update the label text to show the decimal
         warning.style.visibility = "visible";
     } else {
         warning.style.visibility = "hidden";
     }
 
-    document.getElementById('targetVal').innerText = desiredPx.toFixed(1);
+    let calcFovH = (calculationPx * effResH) / 1000;
+    let calcFovV = (calculationPx * effResV * 0.8) / 1000; 
+
+    // Visual Updates
+    document.getElementById('targetVal').innerText = displayPx.toFixed(1);
     document.getElementById('effRes').innerText = Math.round(effResH) + " x " + Math.round(effResV) + " px";
     document.getElementById('finalFov').innerText = calcFovH.toFixed(1);
     document.getElementById('finalVFov').innerText = calcFovV.toFixed(1);
     document.getElementById('minMsg').innerText = "Min: " + parseFloat(slider.min).toFixed(1) + "µm";
     document.getElementById('maxMsg').innerText = "Max: " + trueMaxPx.toFixed(1) + "µm";
 
-    document.getElementById('tablePx').innerText = desiredPx.toFixed(1);
-    document.getElementById('featSize').innerText = (desiredPx * 2).toFixed(1) + " - " + (desiredPx * 5).toFixed(1);
-    document.getElementById('quantSize').innerText = (desiredPx * 5).toFixed(1) + " - " + (desiredPx * 20).toFixed(1);
+    document.getElementById('tablePx').innerText = displayPx.toFixed(1);
+    document.getElementById('featSize').innerText = (displayPx * 2).toFixed(1) + " - " + (displayPx * 5).toFixed(1);
+    document.getElementById('quantSize').innerText = (displayPx * 5).toFixed(1) + " - " + (displayPx * 20).toFixed(1);
 }
 
 window.onload = function() {
