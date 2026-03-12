@@ -67,7 +67,7 @@
             </div>
             
             <div id="limitWarning" style="text-align: center; margin-top: 10px; font-size: 11px; color: #de350b; font-weight: bold; visibility: hidden;">
-                MAX APERTURE REACHED
+                LIMIT REACHED
             </div>
             <div style="text-align: center; font-size: 9px; color: #6b778c; margin-top: 5px;">
                 *Vertical FOV uses 80% of pixels to avoid cone-beam artifacts.
@@ -119,16 +119,22 @@ function handleCamChange() {
     const slider = document.getElementById('pxSlider');
     const cam = cams[camIdx];
     
-    const newMin = cam.min * bin;
+    const rawMin = cam.min * bin;
     const rawMax = (cam.maxFov * 1000) / (cam.resH / bin);
     
-    // We round the slider's MAX down to the nearest perfect step
-    // This keeps the slider's internal grid aligned to even numbers
-    const stepAlignedMax = Math.floor(rawMax / cam.step) * cam.step;
+    // Aligns Min/Max to perfect step multiples
+    // Ceil for min ensures we don't go below hardware capability
+    // Floor for max ensures we don't exceed the aperture limit
+    const alignedMin = Math.ceil(rawMin / cam.step) * cam.step;
+    const alignedMax = Math.floor(rawMax / cam.step) * cam.step;
 
-    slider.min = newMin;
-    slider.max = stepAlignedMax;
     slider.step = cam.step;
+    slider.min = alignedMin;
+    slider.max = alignedMax;
+    
+    let currentVal = parseFloat(slider.value);
+    if (currentVal < alignedMin) slider.value = alignedMin;
+    if (currentVal > alignedMax) slider.value = alignedMax;
     
     lastBin = bin;
     updateCT();
@@ -139,7 +145,13 @@ function handleBinChange() {
     const slider = document.getElementById('pxSlider');
     const oldVal = parseFloat(slider.value);
     const ratio = currentBin / lastBin;
-    slider.value = (oldVal * ratio).toFixed(2);
+    
+    // Snap the new value to the closest step after scaling
+    const camIdx = document.getElementById('camSelect').value;
+    const step = cams[camIdx].step;
+    const newVal = Math.round((oldVal * ratio) / step) * step;
+    
+    slider.value = newVal;
     lastBin = currentBin;
     handleCamChange();
 }
@@ -150,39 +162,31 @@ function updateCT() {
     const slider = document.getElementById('pxSlider');
     const cam = cams[camIdx];
 
-    let displayPx = parseFloat(slider.value);
+    const currentPx = parseFloat(slider.value);
     const effResH = cam.resH / bin;
     const effResV = cam.resV / bin;
 
-    const trueMaxPx = (cam.maxFov * 1000) / effResH;
-    
-    // Check if slider is at its own maximum
-    // If it is, we use the "True Max" for calculations/display
-    let calculationPx = displayPx;
-    let warning = document.getElementById('limitWarning');
+    const calcFovH = (currentPx * effResH) / 1000;
+    const calcFovV = (currentPx * effResV * 0.8) / 1000; 
 
-    if (displayPx >= parseFloat(slider.max)) {
-        calculationPx = trueMaxPx;
-        displayPx = trueMaxPx; // Update the label text to show the decimal
+    // Warning only shows if we are at the very top of the aligned range
+    let warning = document.getElementById('limitWarning');
+    if (currentPx >= parseFloat(slider.max)) {
         warning.style.visibility = "visible";
     } else {
         warning.style.visibility = "hidden";
     }
 
-    let calcFovH = (calculationPx * effResH) / 1000;
-    let calcFovV = (calculationPx * effResV * 0.8) / 1000; 
-
-    // Visual Updates
-    document.getElementById('targetVal').innerText = displayPx.toFixed(1);
+    document.getElementById('targetVal').innerText = currentPx.toFixed(1);
     document.getElementById('effRes').innerText = Math.round(effResH) + " x " + Math.round(effResV) + " px";
     document.getElementById('finalFov').innerText = calcFovH.toFixed(1);
     document.getElementById('finalVFov').innerText = calcFovV.toFixed(1);
     document.getElementById('minMsg').innerText = "Min: " + parseFloat(slider.min).toFixed(1) + "µm";
-    document.getElementById('maxMsg').innerText = "Max: " + trueMaxPx.toFixed(1) + "µm";
+    document.getElementById('maxMsg').innerText = "Max: " + parseFloat(slider.max).toFixed(1) + "µm";
 
-    document.getElementById('tablePx').innerText = displayPx.toFixed(1);
-    document.getElementById('featSize').innerText = (displayPx * 2).toFixed(1) + " - " + (displayPx * 5).toFixed(1);
-    document.getElementById('quantSize').innerText = (displayPx * 5).toFixed(1) + " - " + (displayPx * 20).toFixed(1);
+    document.getElementById('tablePx').innerText = currentPx.toFixed(1);
+    document.getElementById('featSize').innerText = (currentPx * 2).toFixed(1) + " - " + (currentPx * 5).toFixed(1);
+    document.getElementById('quantSize').innerText = (currentPx * 5).toFixed(1) + " - " + (currentPx * 20).toFixed(1);
 }
 
 window.onload = function() {
