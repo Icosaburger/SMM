@@ -3,102 +3,57 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>XRM ROI & Position Planner</title>
+    <title>XRM Bone Scan Planner</title>
     <style>
         html, body { 
-            margin: 0; 
-            padding: 0; 
-            overflow-x: hidden; 
-            height: auto; 
+            margin: 0; padding: 0; overflow-x: hidden; height: auto; 
             background-color: transparent; 
         }
-        
         .main-wrapper { 
-            display: flex; 
-            flex-wrap: wrap; 
-            justify-content: center; 
-            gap: 20px; 
-            width: 100%; 
-            padding: 20px; 
-            box-sizing: border-box; 
-            font-family: 'Segoe UI', Tahoma, sans-serif; 
-            color: #172b4d; 
+            display: flex; flex-wrap: wrap; justify-content: center; gap: 20px; 
+            width: 100%; padding: 20px; box-sizing: border-box; 
+            font-family: 'Segoe UI', Tahoma, sans-serif; color: #172b4d; 
         }
-
         .card {
-            padding: 20px; 
-            border: 1px solid #dfe1e6; 
-            border-radius: 10px; 
-            background: #ffffff; 
-            width: 480px; 
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            padding: 20px; border: 1px solid #dfe1e6; border-radius: 10px; 
+            background: #ffffff; width: 480px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);
             box-sizing: border-box;
         }
-
         h3 { 
-            margin-top: 0; 
-            color: #0052cc; 
-            border-bottom: 2px solid #ebecf0; 
-            padding-bottom: 10px; 
-            text-align: center; 
+            margin-top: 0; color: #0052cc; border-bottom: 2px solid #ebecf0; 
+            padding-bottom: 10px; text-align: center; 
         }
-
         label { font-weight: bold; display: block; margin-bottom: 5px; margin-top: 10px; }
-        
         select, input[type="number"] {
-            width: 100%; 
-            padding: 8px; 
-            margin-bottom: 5px;
-            border: 1px solid #dfe1e6;
-            border-radius: 4px;
-            box-sizing: border-box;
+            width: 100%; padding: 8px; margin-bottom: 5px;
+            border: 1px solid #dfe1e6; border-radius: 4px; box-sizing: border-box;
         }
-
+        .warning-box { 
+            background: #fff0f0; border: 1px solid #ffbdad; padding: 10px; 
+            border-radius: 4px; color: #bf2600; font-size: 12px; 
+            margin-top: 5px; display: none; 
+        }
         .results-box {
-            background: #f4f5f7; 
-            padding: 15px; 
-            border-radius: 6px; 
-            border-left: 5px solid #0052cc;
-            margin-top: 20px;
+            background: #f4f5f7; padding: 15px; border-radius: 6px; 
+            border-left: 5px solid #0052cc; margin-top: 20px;
         }
-
-        .result-row {
-            display: flex; 
-            justify-content: space-between; 
-            margin-bottom: 8px;
-            font-size: 14px;
-        }
-
+        .result-row { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 14px; }
         .result-row strong { color: #0052cc; }
-
         #diagContainer {
-            margin-top: 10px;
-            border: 1px solid #dfe1e6;
-            background: #f9fafb;
-            border-radius: 4px;
-            display: flex;
-            justify-content: center;
-            padding: 10px;
-            min-height: 400px;
+            margin-top: 10px; border: 1px solid #dfe1e6; background: #f9fafb;
+            border-radius: 4px; display: flex; justify-content: center; padding: 10px;
         }
-
-        .note {
-            font-size: 11px; 
-            color: #6b778c; 
-            margin-top: 15px; 
-            line-height: 1.4;
-        }
+        .note { font-size: 11px; color: #6b778c; margin-top: 15px; line-height: 1.4; }
     </style>
 </head>
 <body>
 
 <div class="main-wrapper">
-
     <div class="card">
         <h3>Primary Parameters</h3>
         
         <label for="sampleHeight">Sample Height (mm)</label>
-        <input type="number" id="sampleHeight" value="20" step="0.1" oninput="runLogic()">
+        <input type="number" id="sampleHeight" value="45" step="1" oninput="runLogic()">
 
         <label for="holderSelect">Holder Type</label>
         <select id="holderSelect" onchange="runLogic()">
@@ -110,19 +65,20 @@
 
         <label for="binning">Camera Binning</label>
         <select id="binning" onchange="runLogic()">
-            <option value="1">1x1 (4096 px)</option>
-            <option value="2" selected>2x2 (2048 px)</option>
-            <option value="4">4x4 (1024 px)</option>
+            <option value="1">1x1 (2-6.5µm)</option>
+            <option value="2" selected>2x2 (4-13µm)</option>
+            <option value="4">4x4 (8-26µm)</option>
         </select>
 
-        <label for="resolution">Resolution / Pixel Size (µm)</label>
-        <input type="number" id="resolution" value="10" step="0.1" oninput="runLogic()">
+        <label for="resolution">Resolution (µm)</label>
+        <input type="number" id="resolution" value="10" step="0.5" oninput="runLogic()">
+        <div id="resWarning" class="warning-box"></div>
 
         <div class="results-box">
-            <div class="result-row"><span>Calculated FOV (Sq):</span> <strong id="calcFOV">--</strong></div>
-            <div class="result-row"><span>Scans Required:</span> <strong id="scanCount">--</strong></div>
-            <div class="result-row"><span>Lower Limit (Start):</span> <strong id="lowerLimit">--</strong></div>
-            <div class="result-row"><span>Upper Limit (End):</span> <strong id="upperLimit">--</strong></div>
+            <div class="result-row"><span>FOV Square:</span> <strong id="calcFOV">--</strong></div>
+            <div class="result-row"><span>Total Scans:</span> <strong id="scanCount">--</strong></div>
+            <div class="result-row"><span>Lower Limit (Z):</span> <strong id="lowerLimit">--</strong></div>
+            <div class="result-row"><span>Upper Limit (Z):</span> <strong id="upperLimit">--</strong></div>
         </div>
     </div>
 
@@ -134,10 +90,9 @@
             </svg>
         </div>
         <p class="note">
-            <em>Physics Note: FOV is calculated as (Pixels / Binning) * Pixel Size. As resolution improves (lower µm), the FOV shrinks, necessitating more vertical scans.</em>
+            <em>Workflow Rules: 0.5µm increments permitted. Bounds are strictly enforced based on detector physics and binning limits.</em>
         </p>
     </div>
-
 </div>
 
 <script>
@@ -147,28 +102,41 @@
         const sHeight = parseFloat(document.getElementById('sampleHeight').value) || 0;
         const mid = parseFloat(document.getElementById('holderSelect').value);
         const binning = parseInt(document.getElementById('binning').value);
-        const res = parseFloat(document.getElementById('resolution').value) || 0;
+        let res = parseFloat(document.getElementById('resolution').value) || 0;
 
-        // 1. Calculate Real-World FOV (mm)
-        // (4096 px / binning) * (res in microns / 1000)
+        // 1. New Resolution Limits Logic
+        const maxRes = (26 / 4) * binning;
+        let minRes = 1;
+        if (binning === 1) minRes = 2;
+        if (binning === 2) minRes = 4;
+        if (binning === 4) minRes = 8;
+
+        const warning = document.getElementById('resWarning');
+        
+        if (res > maxRes || res < minRes) {
+            warning.style.display = 'block';
+            warning.innerHTML = `<strong>Out of Bounds:</strong> Bin ${binning} range is ${minRes} - ${maxRes}µm`;
+            if (res > maxRes) res = maxRes;
+            if (res < minRes) res = minRes;
+        } else {
+            warning.style.display = 'none';
+        }
+
+        // 2. FOV & Scans
         const fovMM = (4096 / binning) * (res / 1000);
+        // Scans required considering the 0.95 overlap factor
+        const numScans = fovMM > 0 ? Math.ceil(sHeight / (fovMM * 0.95)) : 0;
 
-        // 2. Calculate Scans Required
-        // Using the dynamic FOV instead of the fixed 20mm
-        const numScans = fovMM > 0 ? Math.ceil(sHeight / fovMM) : 0;
-
-        // 3. Limits Logic
+        // 3. Stage Limits
         const offset = (2 * res) / binning;
         const lowerLimit = mid + offset;
-
         let upperLimitText = "N/A (Single)";
         if (numScans >= 2) {
-            // Formula updated to use the dynamic fov (4*res/binning is effectively 2*PixelSize per overlap)
             const val = ((numScans - 1) * 0.95 * (4 * res / binning)) + mid;
             upperLimitText = val.toFixed(3) + " mm";
         }
 
-        // Update UI
+        // 4. Update UI
         document.getElementById('calcFOV').innerText = fovMM.toFixed(2) + " mm";
         document.getElementById('scanCount').innerText = numScans;
         document.getElementById('lowerLimit').innerText = lowerLimit.toFixed(3) + " mm";
@@ -180,24 +148,21 @@
     function renderDiagram(sHeight, scans, fov) {
         const group = document.getElementById('dynamicGroup');
         group.innerHTML = '';
-        
         const canvasH = 400, margin = 50, centerX = 150;
-        // Scale logic: fit the tallest element (sample or total scan height)
         const totalStackMM = fov + ((scans - 1) * (fov * 0.95));
         const maxMM = Math.max(sHeight, totalStackMM, 10);
         const scale = (canvasH - (margin * 2)) / maxMM;
         const drawBottomY = canvasH - margin;
 
-        // Ruler
-        for (let m = 0; m <= maxMM + 10; m += 10) {
+        // Scale Ruler
+        for (let m = 0; m <= maxMM + 5; m += 10) {
             const yPos = drawBottomY - (m * scale);
             if (yPos < 10) continue;
             const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
             line.setAttribute("x1", 45); line.setAttribute("y1", yPos);
-            line.setAttribute("x2", 55); line.setAttribute("y2", yPos);
+            line.setAttribute("x2", 52); line.setAttribute("y2", yPos);
             line.setAttribute("stroke", "#97a0af");
             group.appendChild(line);
-
             const txt = document.createElementNS("http://www.w3.org/2000/svg", "text");
             txt.setAttribute("x", 10); txt.setAttribute("y", yPos + 4);
             txt.setAttribute("font-size", "10"); txt.setAttribute("fill", "#6b778c");
@@ -205,22 +170,27 @@
             group.appendChild(txt);
         }
 
-        // Sample
-        const sRect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
-        sRect.setAttribute("x", centerX - 10);
-        sRect.setAttribute("y", drawBottomY - (sHeight * scale));
-        sRect.setAttribute("width", 20);
-        sRect.setAttribute("height", sHeight * scale);
-        sRect.setAttribute("fill", "#dfe1e6");
-        sRect.setAttribute("stroke", "#97a0af");
-        group.appendChild(sRect);
+        // Bone Path
+        const bHeight = sHeight * scale;
+        const bone = document.createElementNS("http://www.w3.org/2000/svg", "path");
+        const d = `M ${centerX-8} ${drawBottomY} 
+                   L ${centerX+8} ${drawBottomY} 
+                   C ${centerX+14} ${drawBottomY-4}, ${centerX+14} ${drawBottomY-8}, ${centerX+6} ${drawBottomY-12}
+                   L ${centerX+4} ${drawBottomY - bHeight + 12}
+                   C ${centerX+16} ${drawBottomY - bHeight + 8}, ${centerX+16} ${drawBottomY - bHeight}, ${centerX} ${drawBottomY - bHeight}
+                   C ${centerX-16} ${drawBottomY - bHeight}, ${centerX-16} ${drawBottomY - bHeight + 8}, ${centerX-4} ${drawBottomY - bHeight + 12}
+                   L ${centerX-6} ${drawBottomY-12}
+                   C ${centerX-14} ${drawBottomY-8}, ${centerX-14} ${drawBottomY-4}, ${centerX-8} ${drawBottomY} Z`;
+        bone.setAttribute("d", d);
+        bone.setAttribute("fill", "#ececec");
+        bone.setAttribute("stroke", "#97a0af");
+        group.appendChild(bone);
 
-        // Scans
+        // Scan Boxes
         for (let i = 0; i < scans; i++) {
             const yOffset = i * (fov * 0.95 * scale);
             const boxY = drawBottomY - (fov * scale) - yOffset;
             const color = scanColors[i % scanColors.length];
-
             const scanRect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
             scanRect.setAttribute("x", centerX - (fov * scale / 2));
             scanRect.setAttribute("y", boxY);
@@ -232,19 +202,19 @@
             scanRect.setAttribute("stroke-dasharray", "4,2");
             group.appendChild(scanRect);
 
-            if (scans < 15) { // Avoid text clutter for tiny resolutions
+            if (scans < 12) {
                 const labelChar = String.fromCharCode(65 + i);
                 const txt = document.createElementNS("http://www.w3.org/2000/svg", "text");
                 txt.setAttribute("x", centerX + (fov * scale / 2) + 5);
                 txt.setAttribute("y", boxY + 12);
                 txt.setAttribute("font-size", "11");
                 txt.setAttribute("fill", color);
-                txt.textContent = "Scan " + labelChar;
+                txt.setAttribute("font-weight", "bold");
+                txt.textContent = labelChar;
                 group.appendChild(txt);
             }
         }
     }
-
     window.onload = runLogic;
 </script>
 
