@@ -3,46 +3,22 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>XRM Bone Scan Planner</title>
+    <title>XRM Bone Scan Planner & Data Estimator</title>
     <style>
-        html, body { 
-            margin: 0; padding: 0; overflow-x: hidden; height: auto; 
-            background-color: transparent; 
-        }
-        .main-wrapper { 
-            display: flex; flex-wrap: wrap; justify-content: center; gap: 20px; 
-            width: 100%; padding: 20px; box-sizing: border-box; 
-            font-family: 'Segoe UI', Tahoma, sans-serif; color: #172b4d; 
-        }
-        .card {
-            padding: 20px; border: 1px solid #dfe1e6; border-radius: 10px; 
-            background: #ffffff; width: 480px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-            box-sizing: border-box;
-        }
-        h3 { 
-            margin-top: 0; color: #0052cc; border-bottom: 2px solid #ebecf0; 
-            padding-bottom: 10px; text-align: center; 
-        }
+        html, body { margin: 0; padding: 0; overflow-x: hidden; height: auto; background-color: transparent; }
+        .main-wrapper { display: flex; flex-wrap: wrap; justify-content: center; gap: 20px; width: 100%; padding: 20px; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, sans-serif; color: #172b4d; }
+        .card { padding: 20px; border: 1px solid #dfe1e6; border-radius: 10px; background: #ffffff; width: 480px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); box-sizing: border-box; }
+        h3 { margin-top: 0; color: #0052cc; border-bottom: 2px solid #ebecf0; padding-bottom: 10px; text-align: center; }
         label { font-weight: bold; display: block; margin-bottom: 5px; margin-top: 10px; }
-        select, input[type="number"] {
-            width: 100%; padding: 8px; margin-bottom: 5px;
-            border: 1px solid #dfe1e6; border-radius: 4px; box-sizing: border-box;
-        }
-        .warning-box { 
-            background: #fff0f0; border: 1px solid #ffbdad; padding: 10px; 
-            border-radius: 4px; color: #bf2600; font-size: 12px; 
-            margin-top: 5px; display: none; 
-        }
-        .results-box {
-            background: #f4f5f7; padding: 15px; border-radius: 6px; 
-            border-left: 5px solid #0052cc; margin-top: 20px;
-        }
+        select, input[type="number"] { width: 100%; padding: 8px; margin-bottom: 5px; border: 1px solid #dfe1e6; border-radius: 4px; box-sizing: border-box; }
+        .warning-box { background: #fff0f0; border: 1px solid #ffbdad; padding: 10px; border-radius: 4px; color: #bf2600; font-size: 12px; margin-top: 5px; display: none; }
+        .results-box { background: #f4f5f7; padding: 15px; border-radius: 6px; border-left: 5px solid #0052cc; margin-top: 20px; transition: all 0.3s ease; }
+        .results-box.hazard { background: #ffebe6; border-left-color: #de350b; }
         .result-row { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 14px; }
         .result-row strong { color: #0052cc; }
-        #diagContainer {
-            margin-top: 10px; border: 1px solid #dfe1e6; background: #f9fafb;
-            border-radius: 4px; display: flex; justify-content: center; padding: 10px;
-        }
+        .recommendation { margin-top: 15px; padding: 10px; border-radius: 4px; background: #e6f7ff; border: 1px solid #91d5ff; font-size: 13px; color: #0050b3; }
+        #diagContainer { margin-top: 10px; border: 1px solid #dfe1e6; background: #f9fafb; border-radius: 4px; display: flex; justify-content: center; padding: 10px; }
+        .data-card { background: #ebecf0; border-radius: 6px; padding: 12px; margin-top: 10px; }
         .note { font-size: 11px; color: #6b778c; margin-top: 15px; line-height: 1.4; }
     </style>
 </head>
@@ -51,7 +27,6 @@
 <div class="main-wrapper">
     <div class="card">
         <h3>Primary Parameters</h3>
-        
         <label for="sampleHeight">Sample Height (mm)</label>
         <input type="number" id="sampleHeight" value="35" step="1" oninput="runLogic()">
 
@@ -74,28 +49,32 @@
         <input type="number" id="resolution" value="10" step="0.5" oninput="runLogic()">
         <div id="resWarning" class="warning-box"></div>
 
-        <div class="results-box">
-            <div class="result-row"><span>FOV Square:</span> <strong id="calcFOV">--</strong></div>
+        <div id="resBox" class="results-box">
+            <div class="result-row"><span>Lower Limit:</span> <strong id="lowerLimit">--</strong></div>
+            <div class="result-row"><span>Upper Limit:</span> <strong id="upperLimit">--</strong></div>
             <div class="result-row"><span>Total Scans:</span> <strong id="scanCount">--</strong></div>
-            <div class="result-row"><span>Lower Limit (Z):</span> <strong id="lowerLimit">--</strong></div>
-            <div class="result-row"><span>Upper Limit (Z):</span> <strong id="upperLimit">--</strong></div>
         </div>
+        <div id="recBox" class="recommendation" style="display:none;"></div>
     </div>
 
     <div class="card">
-        <h3>ROI Visualizer</h3>
+        <h3>ROI Visualizer & Data Size</h3>
         <div id="diagContainer">
-            <svg id="diagSvg" width="300" height="400" viewBox="0 0 300 400">
+            <svg id="diagSvg" width="300" height="300" viewBox="0 0 300 300">
                 <g id="dynamicGroup"></g>
             </svg>
         </div>
-        <p class="note">
-            <em>Workflow Rules: 0.5µm increments permitted. Bounds strictly enforced. Sample visualization shape adjusts based on height.</em>
-        </p>
+        
+        <div class="data-card">
+            <div class="result-row"><span>Raw Data (180°):</span> <strong id="data180">--</strong></div>
+            <div class="result-row"><span>Raw Data (360°):</span> <strong id="data360">--</strong></div>
+        </div>
+        <p class="note"><em>*Estimates assume 16-bit TIFFs. Projections: 3001/1501 (Bin 1), 1501/751 (Bin 2), 751/376 (Bin 4).</em></p>
     </div>
 </div>
 
 <script>
+    const holders = [{name:"Large",val:20.7},{name:"Medium",val:28.0},{name:"Small",val:35.6},{name:"Tiny",val:54.5}];
     const scanColors = ["#0052cc", "#d04437", "#00875a", "#f67400", "#6554c0"];
 
     function runLogic() {
@@ -104,127 +83,86 @@
         const binning = parseInt(document.getElementById('binning').value);
         let res = parseFloat(document.getElementById('resolution').value) || 0;
 
-        // 1. Resolution Limits Logic
         const maxRes = (26 / 4) * binning;
         let minRes = (binning === 1) ? 2 : (binning === 2) ? 4 : 8;
-
         const warning = document.getElementById('resWarning');
         
         if (res > maxRes || res < minRes) {
             warning.style.display = 'block';
-            warning.innerHTML = `<strong>Out of Bounds:</strong> Bin ${binning} range is ${minRes} - ${maxRes}µm`;
+            warning.innerHTML = `<strong>Out of Bounds:</strong> Bin ${binning} range is ${minRes}-${maxRes}µm`;
             if (res > maxRes) res = maxRes;
             if (res < minRes) res = minRes;
-        } else {
-            warning.style.display = 'none';
-        }
+        } else { warning.style.display = 'none'; }
 
-        // 2. FOV & Scans
         const fovMM = (4096 / binning) * (res / 1000);
         const numScans = fovMM > 0 ? Math.ceil(sHeight / (fovMM * 0.95)) : 0;
-
-        // 3. Stage Limits
         const offset = (2 * res) / binning;
         const lowerLimit = mid + offset;
-        let upperLimitText = "N/A (Single)";
-        if (numScans >= 2) {
-            const val = ((numScans - 1) * 0.95 * (4 * res / binning)) + mid;
-            upperLimitText = val.toFixed(3) + " mm";
-        }
+        let upperLimitVal = (numScans >= 2) ? (((numScans - 1) * 0.95 * (4 * res / binning)) + mid) : lowerLimit;
 
-        // 4. Update UI
-        document.getElementById('calcFOV').innerText = fovMM.toFixed(2) + " mm";
-        document.getElementById('scanCount').innerText = numScans;
+        // Recommendation & Hazards
+        const isHazard = upperLimitVal > 66 || lowerLimit > 66;
+        const recBox = document.getElementById('recBox');
+        if (isHazard) {
+            let foundSafe = false;
+            for (let h of holders) {
+                const testUpper = (numScans >= 2) ? (((numScans - 1) * 0.95 * (4 * res / binning)) + h.val) : h.val + offset;
+                if (testUpper <= 66) {
+                    recBox.innerHTML = `<strong>💡 Recommendation:</strong> Use <strong>${h.name} Holder</strong>.`;
+                    recBox.style.display = 'block'; foundSafe = true; break;
+                }
+            }
+            if (!foundSafe) { recBox.innerHTML = `❌ Sample too tall.`; recBox.style.display = 'block'; }
+        } else { recBox.style.display = 'none'; }
+
+        // Data Logic
+        const pixelsPerImg = Math.pow(4096 / binning, 2);
+        const proj360 = (binning === 1) ? 3001 : (binning === 2) ? 1501 : 751;
+        const proj180 = (binning === 1) ? 1501 : (binning === 2) ? 751 : 376;
+        const size360 = (pixelsPerImg * proj360 * numScans * 2) / (1024**3);
+        const size180 = (pixelsPerImg * proj180 * numScans * 2) / (1024**3);
+
+        document.getElementById('data360').innerText = size360.toFixed(2) + " GB";
+        document.getElementById('data180').innerText = size180.toFixed(2) + " GB";
+        document.getElementById('resBox').className = isHazard ? 'results-box hazard' : 'results-box';
         document.getElementById('lowerLimit').innerText = lowerLimit.toFixed(3) + " mm";
-        document.getElementById('upperLimit').innerText = upperLimitText;
+        document.getElementById('upperLimit').innerText = (numScans >= 2) ? upperLimitVal.toFixed(3) + " mm" : "N/A";
+        document.getElementById('scanCount').innerText = numScans;
 
-        renderDiagram(sHeight, numScans, fovMM);
+        renderDiagram(sHeight, numScans, fovMM, isHazard);
     }
 
-    function renderDiagram(sHeight, scans, fov) {
+    function renderDiagram(sHeight, scans, fov, hazard) {
         const group = document.getElementById('dynamicGroup');
         group.innerHTML = '';
-        const canvasH = 400, margin = 50, centerX = 150;
-        const totalStackMM = fov + ((scans - 1) * (fov * 0.95));
-        const maxMM = Math.max(sHeight, totalStackMM, 10);
+        const canvasH = 300, margin = 40, centerX = 150, maxMM = 70; 
         const scale = (canvasH - (margin * 2)) / maxMM;
         const drawBottomY = canvasH - margin;
 
-        // Ruler
-        for (let m = 0; m <= maxMM + 5; m += 10) {
-            const yPos = drawBottomY - (m * scale);
-            if (yPos < 10) continue;
-            const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
-            line.setAttribute("x1", 45); line.setAttribute("y1", yPos);
-            line.setAttribute("x2", 52); line.setAttribute("y2", yPos);
-            line.setAttribute("stroke", "#97a0af");
-            group.appendChild(line);
-            const txt = document.createElementNS("http://www.w3.org/2000/svg", "text");
-            txt.setAttribute("x", 10); txt.setAttribute("y", yPos + 4);
-            txt.setAttribute("font-size", "10"); txt.setAttribute("fill", "#6b778c");
-            txt.textContent = m + "mm";
-            group.appendChild(txt);
-        }
+        const limitY = drawBottomY - (66 * scale);
+        const limitLine = document.createElementNS("http://www.w3.org/2000/svg", "line");
+        limitLine.setAttribute("x1", 45); limitLine.setAttribute("y1", limitY);
+        limitLine.setAttribute("x2", 250); limitLine.setAttribute("y2", limitY);
+        limitLine.setAttribute("stroke", "#de350b"); limitLine.setAttribute("stroke-dasharray", "5,5");
+        group.appendChild(limitLine);
 
-        // --- New Fattening Logic ---
-        // We define 'fatness' (width scaling) relative to height.
-        // If height is 100mm, bone is slender. If height is 10mm, bone is fat.
-        // Minimum width representation (at height 100) is ~10mm (real world scale).
-        // Maximum width representation (at height 5) is ~25mm (real world scale).
-        const longBoneRatio = 10; // A 100mm bone has ~10mm shaft width
-        const squatBoneRatio = 2;  // A 10mm bone segment is much squatters
-        
-        // Calculate the relative width (real world MM) based on height.
-        // We interpolate. At 100mm -> 10mm wide. At 10mm -> 20mm wide.
-        const targetWidthMM = 20 - ((sHeight - 10) / 90) * 10;
-        const constrainedWidthMM = Math.max(8, Math.min(25, targetWidthMM));
-
+        const targetWidthMM = 22 - ((sHeight - 5) / 95) * 14; 
         const bHeightPixels = sHeight * scale;
-        const bWidthPixels = constrainedWidthMM * scale;
-        const hW = bWidthPixels / 2; // Half Width
-
-        // Bone Path (Femur-like shape, but width is now dynamic)
+        const hW = (targetWidthMM * scale) / 2;
         const bone = document.createElementNS("http://www.w3.org/2000/svg", "path");
-        const d = `M ${centerX - (hW*0.6)} ${drawBottomY} 
-                   L ${centerX + (hW*0.6)} ${drawBottomY} 
-                   C ${centerX + hW} ${drawBottomY-4}, ${centerX + hW} ${drawBottomY-12}, ${centerX + hW*0.5} ${drawBottomY-16}
-                   L ${centerX + hW*0.3} ${drawBottomY - bHeightPixels + 16}
-                   C ${centerX + hW*1.2} ${drawBottomY - bHeightPixels + 8}, ${centerX + hW*1.2} ${drawBottomY - bHeightPixels}, ${centerX} ${drawBottomY - bHeightPixels}
-                   C ${centerX - hW*1.2} ${drawBottomY - bHeightPixels}, ${centerX - hW*1.2} ${drawBottomY - bHeightPixels + 8}, ${centerX - hW*0.3} ${drawBottomY - bHeightPixels + 16}
-                   L ${centerX - hW*0.5} ${drawBottomY-16}
-                   C ${centerX - hW} ${drawBottomY-12}, ${centerX - hW} ${drawBottomY-4}, ${centerX - (hW*0.6)} ${drawBottomY} Z`;
-        bone.setAttribute("d", d);
-        bone.setAttribute("fill", "#ececec");
-        bone.setAttribute("stroke", "#97a0af");
+        const d = `M ${centerX - (hW*0.6)} ${drawBottomY} L ${centerX + (hW*0.6)} ${drawBottomY} C ${centerX + hW} ${drawBottomY-4}, ${centerX + hW} ${drawBottomY-12}, ${centerX + hW*0.5} ${drawBottomY-16} L ${centerX + hW*0.3} ${drawBottomY - bHeightPixels + 16} C ${centerX + hW*1.2} ${drawBottomY - bHeightPixels + 8}, ${centerX + hW*1.2} ${drawBottomY - bHeightPixels}, ${centerX} ${drawBottomY - bHeightPixels} C ${centerX - hW*1.2} ${drawBottomY - bHeightPixels}, ${centerX - hW*1.2} ${drawBottomY - bHeightPixels + 8}, ${centerX - hW*0.3} ${drawBottomY - bHeightPixels + 16} L ${centerX - hW*0.5} ${drawBottomY-16} C ${centerX - hW} ${drawBottomY-12}, ${centerX - hW} ${drawBottomY-4}, ${centerX - (hW*0.6)} ${drawBottomY} Z`;
+        bone.setAttribute("d", d); bone.setAttribute("fill", "#ececec"); bone.setAttribute("stroke", hazard ? "#de350b" : "#97a0af");
         group.appendChild(bone);
 
-        // Scan Boxes
         for (let i = 0; i < scans; i++) {
             const yOffset = i * (fov * 0.95 * scale);
             const boxY = drawBottomY - (fov * scale) - yOffset;
-            const color = scanColors[i % scanColors.length];
             const scanRect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
-            scanRect.setAttribute("x", centerX - (fov * scale / 2));
-            scanRect.setAttribute("y", boxY);
-            scanRect.setAttribute("width", fov * scale);
-            scanRect.setAttribute("height", fov * scale);
-            scanRect.setAttribute("fill", "none");
-            scanRect.setAttribute("stroke", color);
-            scanRect.setAttribute("stroke-width", "2");
-            scanRect.setAttribute("stroke-dasharray", "4,2");
+            scanRect.setAttribute("x", centerX - (fov * scale / 2)); scanRect.setAttribute("y", boxY);
+            scanRect.setAttribute("width", fov * scale); scanRect.setAttribute("height", fov * scale);
+            scanRect.setAttribute("fill", "none"); scanRect.setAttribute("stroke", scanColors[i % 5]);
+            scanRect.setAttribute("stroke-width", "2"); scanRect.setAttribute("stroke-dasharray", "4,2");
             group.appendChild(scanRect);
-
-            if (scans < 12) {
-                const labelChar = String.fromCharCode(65 + i);
-                const txt = document.createElementNS("http://www.w3.org/2000/svg", "text");
-                txt.setAttribute("x", centerX + (fov * scale / 2) + 5);
-                txt.setAttribute("y", boxY + 12);
-                txt.setAttribute("font-size", "11");
-                txt.setAttribute("fill", color);
-                txt.setAttribute("font-weight", "bold");
-                txt.textContent = labelChar;
-                group.appendChild(txt);
-            }
         }
     }
     window.onload = runLogic;
