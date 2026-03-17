@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>XRM Scan Calculator</title>
+    <title>XRM Scan Position Calculator</title>
     <style>
         html, body { 
             margin: 0; 
@@ -71,10 +71,29 @@
 
         .result-row strong { color: #0052cc; }
 
+        #diagContainer {
+            margin-top: 10px;
+            border: 1px solid #dfe1e6;
+            background: #f9fafb;
+            border-radius: 4px;
+            display: flex;
+            justify-content: center;
+            padding: 10px;
+        }
+
+        table { 
+            width: 100%; 
+            border-collapse: collapse; 
+            margin-top: 15px; 
+            font-size: 12px; 
+        }
+        th { background: #f4f5f7; text-align: left; padding: 8px; border-bottom: 2px solid #dfe1e6; }
+        td { padding: 8px; border-bottom: 1px solid #f0f0f0; }
+
         .note {
             font-size: 11px; 
             color: #6b778c; 
-            margin-top: 20px; 
+            margin-top: 15px; 
             line-height: 1.4;
         }
     </style>
@@ -84,10 +103,10 @@
 <div class="main-wrapper">
 
     <div class="card">
-        <h3>Input Parameters</h3>
+        <h3>Scan Parameters</h3>
         
         <label for="sampleHeight">Sample Height (mm)</label>
-        <input type="number" id="sampleHeight" value="10" step="0.1" oninput="runLogic()">
+        <input type="number" id="sampleHeight" value="35" step="0.1" oninput="runLogic()">
 
         <label for="holderSelect">Holder Type</label>
         <select id="holderSelect" onchange="runLogic()">
@@ -124,22 +143,32 @@
     </div>
 
     <div class="card">
-        <h3>Calculated Metrics</h3>
-        <div class="results-box" style="border-left-color: #6b778c;">
-             <div class="result-row">
-                <span>Offset Value:</span>
-                <span id="offsetVal">--</span>
-            </div>
-            <div class="result-row">
-                <span>Mid Point (Holder):</span>
-                <span id="midVal">--</span>
-            </div>
+        <h3>Visual Mockup</h3>
+        <div id="diagContainer">
+            <svg id="diagSvg" width="200" height="220" viewBox="0 0 200 220">
+                <g id="dynamicGroup"></g>
+            </svg>
         </div>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Holder</th>
+                    <th>Mid Value</th>
+                    <th>Offset (mm)</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Current</td>
+                    <td id="tableMid">--</td>
+                    <td id="tableOffset">--</td>
+                </tr>
+            </tbody>
+        </table>
+
         <p class="note">
-            <em>Formulas:</em><br>
-            Offset = (2 * Resolution) / Binning<br>
-            Scans = RoundUp(Height / 20)<br>
-            Upper Limit uses a 0.95 overlap factor for multi-scan workflows.
+            <em>Calculation Logic: The Upper Limit is only calculated for multi-scan workflows (Sample > 20mm). Overlap is based on a 0.95 factor.</em>
         </p>
     </div>
 
@@ -147,44 +176,70 @@
 
 <script>
     function runLogic() {
-        // Get Inputs
         const height = parseFloat(document.getElementById('sampleHeight').value) || 0;
         const mid = parseFloat(document.getElementById('holderSelect').value);
         const binning = parseInt(document.getElementById('binning').value);
         const res = parseFloat(document.getElementById('resolution').value) || 0;
 
-        // 1. Calculate Offset
-        // Formula: (2 * Resolution) / Binning
+        // Core Formulae
         const offset = (2 * res) / binning;
-
-        // 2. Lower Limit
-        // Formula: Mid + Offset
         const lowerLimit = mid + offset;
-
-        // 3. Number of Scans
-        // Formula: RoundUP(sample height / 20, 0)
         const numScans = Math.ceil(height / 20);
 
-        // 4. Upper Limit
-        // Formula: If scans < 2, "", else (Scans-1) * 0.95 * (4 * Res / Binning) + Mid
-        let upperLimitDisplay = "N/A (Single Scan)";
+        let upperLimitText = "N/A (Single)";
         if (numScans >= 2) {
             const val = ((numScans - 1) * 0.95 * (4 * res / binning)) + mid;
-            upperLimitDisplay = val.toFixed(3) + " mm";
+            upperLimitText = val.toFixed(3) + " mm";
         }
 
-        // Update UI
-        document.getElementById('offsetVal').innerText = offset.toFixed(3) + " mm";
-        document.getElementById('midVal').innerText = mid.toFixed(1) + " mm";
+        // Update Text Results
         document.getElementById('lowerLimit').innerText = lowerLimit.toFixed(3) + " mm";
-        document.getElementById('upperLimit').innerText = upperLimitDisplay;
+        document.getElementById('upperLimit').innerText = upperLimitText;
         document.getElementById('scanCount').innerText = numScans;
+        
+        // Update Small Reference Table
+        document.getElementById('tableMid').innerText = mid.toFixed(1) + " mm";
+        document.getElementById('tableOffset').innerText = offset.toFixed(3) + " mm";
+
+        renderDiagram(height, numScans);
     }
 
-    // Initialize on load
-    window.onload = function() {
-        runLogic();
-    };
+    function renderDiagram(sHeight, scans) {
+        const group = document.getElementById('dynamicGroup');
+        group.innerHTML = '';
+        const canvasH = 220, margin = 30, centerX = 100, fovMM = 20; 
+        const totalStackMM = fovMM + ((scans - 1) * 15); 
+        const maxMM = Math.max(sHeight, totalStackMM, 30);
+        const scale = (canvasH - (margin * 2)) / maxMM;
+        const drawBottomY = canvasH - margin;
+
+        // Sample (Grey)
+        const sRect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+        sRect.setAttribute("x", centerX - 15);
+        sRect.setAttribute("y", drawBottomY - (sHeight * scale));
+        sRect.setAttribute("width", 30);
+        sRect.setAttribute("height", sHeight * scale);
+        sRect.setAttribute("fill", "#dfe1e6");
+        sRect.setAttribute("stroke", "#97a0af");
+        group.appendChild(sRect);
+
+        // Scans (Blue)
+        for (let i = 0; i < scans; i++) {
+            const yOffset = i * (15 * scale); 
+            const boxY = drawBottomY - (fovMM * scale) - yOffset;
+            const scanRect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+            scanRect.setAttribute("x", centerX - 25);
+            scanRect.setAttribute("y", boxY);
+            scanRect.setAttribute("width", 50);
+            scanRect.setAttribute("height", fovMM * scale);
+            scanRect.setAttribute("fill", "rgba(0, 82, 204, 0.08)");
+            scanRect.setAttribute("stroke", "#0052cc");
+            scanRect.setAttribute("stroke-dasharray", "3,2");
+            group.appendChild(scanRect);
+        }
+    }
+
+    window.onload = runLogic;
 </script>
 
 </body>
