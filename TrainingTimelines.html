@@ -1,0 +1,99 @@
+<script>
+        // =========================================================================
+        // HUMAN READABLE DATA TABLE (UPDATE YOUR PROJECT HERE)
+        // 
+        // startWeek: The raw week number if it is an independent task.
+        // durationWeeks: How many weeks the task takes to complete.
+        // dependsOn: ID of the parent task. Leave blank if independent.
+        // relativeTo: 'start' (starts X weeks after parent starts)
+        //             'finish' (starts Y weeks after parent finishes)
+        // offsetWeeks: Number of weeks to delay based on the relativeTo choice.
+        // =========================================================================
+        const projectData = [
+            { id: 'task-1', name: 'Task 1: Core Setup', durationWeeks: 4, startWeek: 0, dependsOn: '', relativeTo: '', offsetWeeks: 0, progress: 60 },
+            
+            // Task 2 starts 2 weeks after Task 1 STARTS (Cascades if Task 1 shifts)
+            { id: 'task-2', name: 'Task 2: Sub-System', durationWeeks: 3, startWeek: 0, dependsOn: 'task-1', relativeTo: 'start', offsetWeeks: 2, progress: 20 },
+            
+            // Task 3 starts 1 week after Task 2 FINISHES (Cascades if Task 2 shifts)
+            { id: 'task-3', name: 'Task 3: Integration', durationWeeks: 5, startWeek: 0, dependsOn: 'task-2', relativeTo: 'finish', offsetWeeks: 1, progress: 0 }
+        ];
+        // =========================================================================
+
+        // Automatically anchors the timeline to today's date on every page load
+        const BASE_DATE = new Date(); 
+
+        // Helper function to add days to a date
+        function addDays(date, days) {
+            const result = new Date(date);
+            result.setDate(result.getDate() + days);
+            return result;
+        }
+
+        // Helper to format date into YYYY-MM-DD strings required by the engine
+        function formatDate(date) {
+            return date.toISOString().split('T')[0];
+        }
+
+        // Processing pipeline to calculate real schedule paths from relative properties
+        const processedTasks = [];
+        const taskMap = {};
+
+        // Loop through data to build exact date timelines dynamically
+        projectData.forEach(task => {
+            let startCalculatedDate;
+
+            if (task.dependsOn && taskMap[task.dependsOn]) {
+                const parent = taskMap[task.dependsOn];
+                if (task.relativeTo === 'start') {
+                    startCalculatedDate = addDays(parent._rawStart, task.offsetWeeks * 7);
+                } else if (task.relativeTo === 'finish') {
+                    startCalculatedDate = addDays(parent._rawEnd, task.offsetWeeks * 7);
+                } else {
+                    startCalculatedDate = addDays(BASE_DATE, task.startWeek * 7);
+                }
+            } else {
+                startCalculatedDate = addDays(BASE_DATE, task.startWeek * 7);
+            }
+
+            const endCalculatedDate = addDays(startCalculatedDate, task.durationWeeks * 7);
+
+            // Store internal references so children can access them during the loop execution
+            task._rawStart = startCalculatedDate;
+            task._rawEnd = endCalculatedDate;
+            taskMap[task.id] = task;
+
+            // Map data to the expected library structure
+            processedTasks.push({
+                id: task.id,
+                name: task.name,
+                start: formatDate(startCalculatedDate),
+                end: formatDate(endCalculatedDate),
+                progress: task.progress,
+                dependencies: task.dependsOn
+            });
+        });
+
+        // Initialize and render the cascading visual timeline
+        const gantt = new Gantt("#gantt", processedTasks, {
+            header_height: 50,
+            column_width: 40,
+            step: 24,
+            view_mode: 'Week', 
+            bar_height: 25,
+            bar_corner_radius: 3,
+            arrow_curve: 5,
+            padding: 18,
+            date_format: 'YYYY-MM-DD',
+            custom_popup_html: function(task) {
+                const original = taskMap[task.id];
+                return `
+                    <div class="details-container" style="padding: 10px; font-size: 13px;">
+                        <h5>${task.name}</h5>
+                        <p>Duration: ${original.durationWeeks} weeks</p>
+                        <p>Progress: ${task.progress}%</p>
+                    </div>
+                `;
+            }
+        });
+    </script>
