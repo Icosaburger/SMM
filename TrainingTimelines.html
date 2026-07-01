@@ -343,7 +343,7 @@
                     { technique: "X-Ray tomography", prereq: "None", wait: 3, cat2: 4, results: 8 },
                     { technique: "X-Ray tomography - Staff operated", prereq: "None", wait: 2, cat2: 0, results: 2 },
                     { technique: "In-situ XRM rigs - Staff operated", prereq: "Category 2 in X-Ray tomography - Staff operated", wait: 0, cat2: 0, results: 2 },
-                    { technique: "Data Analysis", prereq: "Category 2 in X-Ray tomography - Staff operated", offset: 1, wait: 0, cat2: 0, results: 8 }
+                    { technique: "Data Analysis", prereq: "Category 2 in X-Ray tomography - Staff operated", offset: 1.5, wait: 0, cat2: 0, results: 8 }
                 ]
             },
             {
@@ -429,7 +429,7 @@
             });
         });
 
-        const totalColumnsCount = maxWeekReached;
+        const totalColumnsCount = Math.ceil(maxWeekReached);
         const gridContainer = document.getElementById('ganttGrid');
 
         // Step 2: Render Main Grid Timeline Header with "Week Number" Span
