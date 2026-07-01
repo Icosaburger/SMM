@@ -115,12 +115,22 @@
             display: flex;
             align-items: center;
             height: 38px;
-            border-bottom: 1px solid #f0f0f0;
+            min-height: 38px; 
+            max-height: 38px;
+            box-sizing: border-box;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        /* Zebra striping to add distinct visual lanes between different techniques */
+        .section-rows-container .gantt-row:nth-child(even) {
+            background-color: #f1f5f9;
         }
 
         .gantt-row.header {
             height: 30px;
-            border-bottom: 2px solid #e2e8f0;
+            min-height: 30px;
+            max-height: 30px;
+            border-bottom: 2px solid #cbd5e1;
             font-weight: 600;
             font-size: 11px;
             color: #4a5568;
@@ -133,6 +143,7 @@
             font-size: 13px;
             font-weight: 500;
             color: #1a202c;
+            padding-left: 8px;
             padding-right: 10px;
             white-space: nowrap;
             overflow: hidden;
@@ -151,7 +162,7 @@
         .week-cell {
             flex: 1;
             text-align: center;
-            border-left: 1px solid #edf2f7;
+            border-left: 1px solid #e2e8f0;
             height: 100%;
             display: flex;
             align-items: center;
@@ -177,7 +188,7 @@
         .guide-cell {
             flex: 1;
             height: 100%;
-            border-left: 1px solid #edf2f7;
+            border-left: 1px solid #e2e8f0;
         }
 
         .guide-cell:first-child {
@@ -191,6 +202,7 @@
             border-radius: 4px;
             pointer-events: none;
             box-sizing: border-box;
+            border: 1px solid rgba(0, 0, 0, 0.08);
         }
     </style>
 </head>
@@ -198,15 +210,15 @@
 
     <div class="legend-container">
         <div class="legend-item">
-            <div class="legend-color" style="background-color: #ffccd5;"></div>
+            <div class="legend-color" style="background-color: #ffccd5; border: 1px solid rgba(0,0,0,0.08);"></div>
             <span>Wait Time</span>
         </div>
         <div class="legend-item">
-            <div class="legend-color" style="background-color: #3b82f6;"></div>
+            <div class="legend-color" style="background-color: #3b82f6; border: 1px solid rgba(0,0,0,0.08);"></div>
             <span>Category 2 Training</span>
         </div>
         <div class="legend-item">
-            <div class="legend-color" style="background-color: #10b981;"></div>
+            <div class="legend-color" style="background-color: #10b981; border: 1px solid rgba(0,0,0,0.08);"></div>
             <span>Meaningful Results</span>
         </div>
     </div>
@@ -325,7 +337,7 @@
                 };
 
                 trackMap[item.technique] = trackObj;
-                item._processed = trackObj; // Attach back to structural item reference
+                item._processed = trackObj;
 
                 if (cursor > maxWeekReached) {
                     maxWeekReached = cursor;
@@ -344,18 +356,18 @@
         headerHtml += `</div></div>`;
         gridContainer.innerHTML += headerHtml;
 
-        // Step 3: Render Sections with Collapsible Containers
+        // Step 3: Render Sections with Collapsible Containers (Defaulting to Closed/Collapsed)
         sectionsData.forEach((section, index) => {
             const sectionId = `section-container-${index}`;
             const headerId = `section-header-${index}`;
 
-            // Append Clickable Accordion Header Row
+            // Modified here: Appended 'collapsed' class targets directly on initial render layout strings
             let groupRowHtml = `
-                <div class="group-header" id="${headerId}" onclick="toggleSection('${sectionId}', '${headerId}')">
+                <div class="group-header collapsed" id="${headerId}" onclick="toggleSection('${sectionId}', '${headerId}')">
                     <span>${section.sectionTitle}</span>
                     <span class="accordion-arrow"></span>
                 </div>
-                <div class="section-rows-container" id="${sectionId}">
+                <div class="section-rows-container collapsed" id="${sectionId}" style="max-height: 0px;">
             `;
 
             section.items.forEach(item => {
@@ -389,18 +401,8 @@
                 groupRowHtml += rowHtml;
             });
 
-            groupRowHtml += `</div>`; // Close row wrapper container
+            groupRowHtml += `</div>`; 
             gridContainer.innerHTML += groupRowHtml;
-        });
-
-        // Initialize and lock correct flex height parameters for smooth animation behaviors
-        document.addEventListener("DOMContentLoaded", () => {
-            sectionsData.forEach((_, index) => {
-                const container = document.getElementById(`section-container-${index}`);
-                if(container) {
-                    container.style.maxHeight = container.scrollHeight + "px";
-                }
-            });
         });
 
         // JavaScript Accordion Toggle Function
