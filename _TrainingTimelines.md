@@ -16,14 +16,14 @@ const sectionsData = [
     {
         sectionTitle: "NAME OF THE DISCIPLINE SECTION",
         items: [
-            { 
-                technique: "Exact Name of Technique", 
-                prereq: "None", 
-                offset: 0,
-                wait: 0, 
-                cat2: 0, 
-                results: 0 
-            }
+                { 
+                    technique: "Exact Name of Technique", 
+                    prereq: "None", 
+                    offset: 0, // Optional: defaults to 0 if omitted
+                    wait: 0, 
+                    cat2: 0, 
+                    results: 0 
+                }
         ]
     }
 ];
@@ -36,7 +36,7 @@ const sectionsData = [
 | sectionTitle | String (e.g., "XRM SECTION") | Creates a sticky, full-width accordion header block. |
 | technique | String (e.g., "SEM Imaging") | Displays as the left-hand text label. Must be unique if used as a prerequisite elsewhere. |
 | prereq | String ("None", or explicit milestone string) | Defines the scheduling trigger point for this specific line block. |
-| offset | Integer (Weeks) | Allows for offset values to be applied (optional)
+| offset | Float/Integer (Weeks) | Shifts the start of the technique bar by the specified number of weeks relative to the prerequisite milestone. Default is 0 if ommitted.
 | wait | Integer (Weeks) | Renders a Light Pink Bar. Represents processing/onboarding latency. |
 | cat2 | Integer (Weeks) | Renders a Blue Bar. Represents core technical instruction tracks. |
 | results | Integer (Weeks) | Renders a Green Bar. Represents independent user capability testing. |
@@ -95,7 +95,16 @@ The calculation block handles 0 entries smoothly by suppressing block rendering 
 
 ---
 
-## 4. Troubleshooting for Future Admins
+## 4. Optional Offset parameter
+
+Use the offset parameter when a technique's training cannot begin immediately upon completion of a prerequisite milestone. This is useful for scheduling administrative gaps, equipment maintenance windows, or instructor availability delays.  
+* Example: If a prerequisite finishes at Week 4, but the next training session cannot start until Week 5.5, setting 
+> offset: 1.5 
+will shift the start of that technique bar forward by 1.5 weeks. 
+
+---
+
+## 5. Troubleshooting for Future Admins
 
 * The timeline bar is starting at Week 0 instead of shifting downstream: Check the spelling of your prereq parameter. Ensure it accurately incorporates either "Category 2 in ..." or "Meaningful Results in ..." followed by a verbatim character match of the parent technique block label.
 * A new accordion section is completely frozen or won't click open: This typically means a comma or structural bracket was accidentally omitted when pasting data into sectionsData. Open your web browser's Developer Tools Console (F12) to identify the exact code line syntax error.
