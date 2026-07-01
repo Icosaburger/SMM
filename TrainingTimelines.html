@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Training Operational Timeline</title>
+    <title>SEM Training Timeline Matrix</title>
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
@@ -93,8 +93,8 @@
 
         /* Column Settings */
         .label-column {
-            width: 150px;
-            min-width: 150px;
+            width: 260px;
+            min-width: 260px;
             font-size: 13px;
             font-weight: 500;
             color: #1a202c;
@@ -121,6 +121,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
+            font-size: 11px;
         }
 
         .week-cell:first-child {
@@ -163,7 +164,7 @@
     <div class="legend-container">
         <div class="legend-item">
             <div class="legend-color" style="background-color: #ffccd5;"></div>
-            <span>Queue / Waiting</span>
+            <span>Wait Time</span>
         </div>
         <div class="legend-item">
             <div class="legend-color" style="background-color: #3b82f6;"></div>
@@ -171,7 +172,7 @@
         </div>
         <div class="legend-item">
             <div class="legend-color" style="background-color: #10b981;"></div>
-            <span>Advanced/Category 3 Training</span>
+            <span>Meaningful Results</span>
         </div>
     </div>
 
@@ -182,185 +183,146 @@
 
     <script>
         // =========================================================================
-        // DYNAMIC TRACK DATA AND STRUCTURAL CONFIGURATION
-        //
-        // startWeek:        Used if the track is independent (dependsOn is blank).
-        // dependsOn:        The ID string of the parent track you want to follow.
-        // relativeTo:       'start' (parent start), 'finish' (parent total end),
-        //                   or 'phase-finish' (specific phase finish marker).
-        // relativeToPhase:  Name of the parent phase to check if using 'phase-finish'.
-        // offsetWeeks:      Number of weeks to delay/offset from your milestone choice.
+        // RAW IMPORT DATA MATRIX (EASY TO COPY/PASTE OR AMEND)
         // =========================================================================
         const HEX_WAIT = '#ffccd5';
-        const HEX_CORE = '#3b82f6';
-        const HEX_ADVD = '#10b981';
+        const HEX_CAT2 = '#3b82f6';
+        const HEX_RSLT = '#10b981';
 
-        const trainingGroups = [
-            {
-                groupName: "Scanning Electron Microscopy (SEM)",
-                tracks: [
-                    {
-                        id: 'sem-basic',
-                        name: 'SEM Basic',
-                        startWeek: 0,
-                        dependsOn: '',
-                        relativeTo: '',
-                        relativeToPhase: '',
-                        offsetWeeks: 0,
-                        phases: [
-                            { name: 'Waiting', duration: 2, color: HEX_WAIT },
-                            { name: 'Training', duration: 2, color: HEX_CORE },
-                            { name: 'Advanced', duration: 2, color: HEX_ADVD }
-                        ]
-                    },
-                    {
-                        id: 'sem-fib',
-                        name: 'SEM FIB',
-                        startWeek: 0, 
-                        dependsOn: 'sem-basic', 
-                        relativeTo: 'phase-finish', // Hooks directly into a single phase milestone
-                        relativeToPhase: 'Training', // Targets completion of Core Training
-                        offsetWeeks: 1,              // Delays it to start 1 week later 
-                        phases: [
-                            { name: 'Training', duration: 4, color: HEX_CORE },
-                            { name: 'Advanced', duration: 8, color: HEX_ADVD }
-                        ]
-                    }
-                ]
-            },
-            {
-                groupName: "Light Optical (LO)",
-                tracks: [
-                    {
-                        id: 'lo-basic',
-                        name: 'LO Basic',
-                        startWeek: 0,
-                        dependsOn: '',
-                        relativeTo: '',
-                        relativeToPhase: '',
-                        offsetWeeks: 0,
-                        phases: [
-                            { name: 'Waiting', duration: 2, color: HEX_WAIT },
-                            { name: 'Training', duration: 2, color: HEX_CORE },
-                            { name: 'Advanced', duration: 2, color: HEX_ADVD }
-                        ]
-                    },
-                    {
-                        id: 'lo-tirf',
-                        name: 'LO TIRF',
-                        startWeek: 0,
-                        dependsOn: 'lo-basic',
-                        relativeTo: 'phase-finish', // Hooks directly into a single phase milestone
-                        relativeToPhase: 'Advanced', // Targets completion of Advanced Training 
-                        offsetWeeks: 0,              // Delays it to start 
-                        phases: [
-                            { name: 'Training', duration: 4, color: HEX_CORE },
-                            { name: 'Advanced', duration: 8, color: HEX_ADVD }
-                        ]
-                    }
-                ]
-            }
+        const rawImportData = [
+            { technique: "SEM Imaging", prereq: "None", wait: 2, cat2: 1, results: 4 },
+            { technique: "FIB-SEM Basic", prereq: "Meaningful Results in SEM Imaging", wait: 3, cat2: 3, results: 8 },
+            { technique: "EDS - Qualitative", prereq: "Meaningful Results in SEM Imaging", wait: 0, cat2: 1, results: 4 },
+            { technique: "STEM/Low kV backscatter", prereq: "Meaningful Results in SEM Imaging", wait: 0, cat2: 1, results: 4 },
+            { technique: "Standard EBSD", prereq: "Category 2 in SEM Imaging", wait: 2, cat2: 2, results: 8 },
+            { technique: "Transmission EBSD (TKD)", prereq: "Category 2 in SEM Imaging", wait: 2, cat2: 3, results: 12 },
+            { technique: "In-situ techniques - SEM", prereq: "Meaningful Results in SEM Imaging", wait: 2, cat2: 2, results: 10 },
+            { technique: "In-situ techniques - EBSD", prereq: "Meaningful Results in Standard EBSD", wait: 2, cat2: 2, results: 10 },
+            { technique: "In-situ techniques - TKD", prereq: "Meaningful Results in Transmission EBSD (TKD)", wait: 2, cat2: 2, results: 10 },
+            { technique: "FIB-SEM Basics", prereq: "Meaningful Results in SEM Imaging", wait: 0, cat2: 0, results: 0 },
+            { technique: "FIB-SEM TEM Sample Prep", prereq: "Category 2 in FIB-SEM Basics", wait: 0, cat2: 2, results: 6 },
+            { technique: "FIB-SEM Nanopillar Prep", prereq: "Category 2 in FIB-SEM Basics", wait: 0, cat2: 3, results: 8 },
+            { technique: "FIB-SEM APT Prep - shaping", prereq: "Category 2 in FIB-SEM Basics", wait: 0, cat2: 2, results: 6 },
+            { technique: "FIB-SEM APT Prep - site specific with lift out", prereq: "Meaningful Results in FIB-SEM Basics", wait: 3, cat2: 4, results: 12 },
+            { technique: "FIB-SEM 3D EDS", prereq: "Meaningful Results in FIB-SEM Basics", wait: 3, cat2: 2, results: 8 },
+            { technique: "FIB-SEM 3D EBSD", prereq: "Meaningful Results in FIB-SEM Basics", wait: 3, cat2: 3, results: 10 },
+            { technique: "FIB-SEM Slice & View", prereq: "Meaningful Results in FIB-SEM Basics", wait: 3, cat2: 1, results: 6 }
         ];
         // =========================================================================
 
+        const processedTracks = [];
         const trackMap = {};
         let maxWeekReached = 0;
 
-        // Step 1: Process dependency tree paths sequentially
-        trainingGroups.forEach(group => {
-            group.tracks.forEach(track => {
-                let currentStart = track.startWeek;
+        // Step 1: Parse table rules & calculate relative anchors dynamically
+        rawImportData.forEach(item => {
+            let currentStart = 0;
 
-                if (track.dependsOn && trackMap[track.dependsOn]) {
-                    const parent = trackMap[track.dependsOn];
-                    
-                    if (track.relativeTo === 'start') {
-                        currentStart = parent._totalStart + track.offsetWeeks;
-                    } else if (track.relativeTo === 'finish') {
-                        currentStart = parent._totalEnd + track.offsetWeeks;
-                    } else if (track.relativeTo === 'phase-finish' && parent._phaseEndMarkers[track.relativeToPhase] !== undefined) {
-                        // Dynamically sets baseline to the exact week the specified parent phase wrapped up
-                        currentStart = parent._phaseEndMarkers[track.relativeToPhase] + track.offsetWeeks;
-                    }
+            // Handle relational parsing strings safely
+            if (item.prereq && item.prereq !== "None") {
+                let targetTechnique = "";
+                let targetMilestone = "";
+
+                if (item.prereq.startsWith("Meaningful Results in ")) {
+                    targetTechnique = item.prereq.replace("Meaningful Results in ", "").trim();
+                    targetMilestone = "results";
+                } else if (item.prereq.startsWith("Category 2 in ")) {
+                    targetTechnique = item.prereq.replace("Category 2 in ", "").trim();
+                    targetMilestone = "cat2";
                 }
 
-                if (currentStart < 0) currentStart = 0;
-
-                track._totalStart = currentStart;
-                track._calculatedPhases = [];
-                track._phaseEndMarkers = {}; // Stores end week markers for child reference maps
-
-                // Loop sequentially across each training block segment to stack durations
-                track.phases.forEach(phase => {
-                    const phaseStart = currentStart;
-                    const phaseEnd = currentStart + phase.duration;
-                    
-                    track._calculatedPhases.push({
-                        start: phaseStart,
-                        end: phaseEnd,
-                        duration: phase.duration,
-                        color: phase.color
-                    });
-
-                    currentStart = phaseEnd; 
-                    track._phaseEndMarkers[phase.name] = phaseEnd; // Log when this specific phase block stops
-                });
-
-                track._totalEnd = currentStart;
-                trackMap[track.id] = track; 
-
-                if (track._totalEnd > maxWeekReached) {
-                    maxWeekReached = track._totalEnd;
+                const parent = trackMap[targetTechnique];
+                if (parent) {
+                    currentStart = parent._milestones[targetMilestone] || 0;
                 }
-            });
+            }
+
+            const w = item.wait || 0;
+            const c = item.cat2 || 0;
+            const r = item.results || 0;
+
+            const calculatedPhases = [];
+            let cursor = currentStart;
+
+            if (w > 0) {
+                calculatedPhases.push({ start: cursor, end: cursor + w, duration: w, color: HEX_WAIT });
+                cursor += w;
+            }
+            
+            const cat2Start = cursor;
+            if (c > 0) {
+                calculatedPhases.push({ start: cursor, end: cursor + c, duration: c, color: HEX_CAT2 });
+                cursor += c;
+            }
+            const cat2End = cursor;
+
+            if (r > 0) {
+                calculatedPhases.push({ start: cursor, end: cursor + r, duration: r, color: HEX_RSLT });
+                cursor += r;
+            }
+            const resultsEnd = cursor;
+
+            const trackObj = {
+                name: item.technique,
+                _calculatedPhases: calculatedPhases,
+                _totalEnd: cursor,
+                _milestones: {
+                    cat2: cat2End,       // Completion of Category 2
+                    results: resultsEnd  // Completion of Meaningful Results
+                }
+            };
+
+            trackMap[item.technique] = trackObj;
+            processedTracks.push(trackObj);
+
+            if (cursor > maxWeekReached) {
+                maxWeekReached = cursor;
+            }
         });
 
         const totalColumnsCount = maxWeekReached;
         const gridContainer = document.getElementById('ganttGrid');
 
-        // Step 2: Render Header Elements
-        let headerHtml = `<div class="gantt-row header"><div class="label-column">Training Track</div><div class="timeline-column">`;
+        // Step 2: Render Header
+        let headerHtml = `<div class="gantt-row header"><div class="label-column">Technique</div><div class="timeline-column">`;
         for (let i = 0; i <= totalColumnsCount; i++) {
             headerHtml += `<div class="week-cell">Wk ${i}</div>`;
         }
         headerHtml += `</div></div>`;
         gridContainer.innerHTML += headerHtml;
 
-        // Step 3: Render Structural Rows grouped by operational modules
-        trainingGroups.forEach(group => {
-            let groupRowHtml = `<div class="group-header">${group.groupName}</div>`;
-            gridContainer.innerHTML += groupRowHtml;
+        // Step 3: Render Structural Rows
+        let groupRowHtml = `<div class="group-header">SEM SECTION</div>`;
+        gridContainer.innerHTML += groupRowHtml;
 
-            group.tracks.forEach(track => {
-                let rowHtml = `
-                    <div class="gantt-row">
-                        <div class="label-column" title="${track.name}">${track.name}</div>
-                        <div class="timeline-column">
-                            <div class="row-guides">`;
-                
-                for (let i = 0; i <= totalColumnsCount; i++) {
-                    rowHtml += `<div class="guide-cell"></div>`;
-                }
-                
-                rowHtml += `</div>`;
+        processedTracks.forEach(track => {
+            let rowHtml = `
+                <div class="gantt-row">
+                    <div class="label-column" title="${track.name}">${track.name}</div>
+                    <div class="timeline-column">
+                        <div class="row-guides">`;
+            
+            for (let i = 0; i <= totalColumnsCount; i++) {
+                rowHtml += `<div class="guide-cell"></div>`;
+            }
+            
+            rowHtml += `</div>`;
 
-                // Draw independent custom blocks for each distinct training segment
-                track._calculatedPhases.forEach(p => {
-                    const leftPercent = (p.start / (totalColumnsCount + 1)) * 100;
-                    const widthPercent = (p.duration / (totalColumnsCount + 1)) * 100;
-
-                    rowHtml += `
-                        <div class="phase-bar" style="left: ${leftPercent}%; width: ${widthPercent}%; background-color: ${p.color};">
-                        </div>
-                    `;
-                });
+            track._calculatedPhases.forEach(p => {
+                const leftPercent = (p.start / (totalColumnsCount + 1)) * 100;
+                const widthPercent = (p.duration / (totalColumnsCount + 1)) * 100;
 
                 rowHtml += `
-                        </div>
+                    <div class="phase-bar" style="left: ${leftPercent}%; width: ${widthPercent}%; background-color: ${p.color};">
                     </div>
                 `;
-                gridContainer.innerHTML += rowHtml;
             });
+
+            rowHtml += `
+                    </div>
+                </div>
+            `;
+            gridContainer.innerHTML += rowHtml;
         });
     </script>
 </body>
