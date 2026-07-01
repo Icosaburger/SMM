@@ -3,14 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Relative CSS Gantt Chart</title>
+    <title>Training Operational Timeline</title>
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
             margin: 10px;
             background-color: #fff;
             color: #333;
-            user-select: none; /* Disables text highlighting/interactivity */
+            user-select: none; /* Disables dragging and text highlighting */
         }
 
         .gantt-wrapper {
@@ -20,8 +20,48 @@
             border-radius: 6px;
             background: #fafafa;
             box-sizing: border-box;
-            padding: 10px;
+            padding: 15px;
             overflow: hidden;
+        }
+
+        /* Group Header Section */
+        .group-header {
+            background-color: #ebecf0;
+            color: #172b4d;
+            font-weight: 700;
+            font-size: 12px;
+            padding: 6px 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-top: 15px;
+            border-radius: 4px;
+        }
+
+        /* Legend Component Styling */
+        .legend-container {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 15px;
+            padding: 10px;
+            background: #fff;
+            border: 1px solid #edf2f7;
+            border-radius: 4px;
+            flex-wrap: wrap;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            font-size: 12px;
+            font-weight: 500;
+            color: #4a5568;
+        }
+
+        .legend-color {
+            width: 24px;
+            height: 14px;
+            border-radius: 3px;
+            margin-right: 8px;
         }
 
         /* Chart Layout Grid */
@@ -31,11 +71,11 @@
             width: 100%;
         }
 
-        /* Header & Row Setup */
+        /* Row Layouts */
         .gantt-row {
             display: flex;
             align-items: center;
-            height: 35px;
+            height: 38px;
             border-bottom: 1px solid #f0f0f0;
         }
 
@@ -51,11 +91,12 @@
             border-bottom: none;
         }
 
-        /* Column Allocations */
+        /* Column Settings */
         .label-column {
             width: 150px;
             min-width: 150px;
             font-size: 13px;
+            font-weight: 500;
             color: #1a202c;
             padding-right: 10px;
             white-space: nowrap;
@@ -71,7 +112,7 @@
             align-items: center;
         }
 
-        /* Header Week Cells */
+        /* Week Header Blocks */
         .week-cell {
             flex: 1;
             text-align: center;
@@ -86,7 +127,7 @@
             border-left: none;
         }
 
-        /* Background Grid Guides for Rows */
+        /* Grid Background Guides */
         .row-guides {
             position: absolute;
             top: 0;
@@ -107,32 +148,32 @@
             border-left: none;
         }
 
-        /* Gantt Bar Styling (Completely Static) */
-        .gantt-bar-container {
+        /* Phased Progress Bars */
+        .phase-bar {
             position: absolute;
-            height: 20px;
-            display: flex;
-            align-items: center;
-            pointer-events: none; /* Disables all mouse clicks, drags, and hovers */
-        }
-
-        .gantt-bar {
-            height: 100%;
-            background-color: #a3b8cc; /* Solid timeline fill background */
+            height: 22px;
             border-radius: 4px;
-            position: relative;
-            overflow: hidden;
-            width: 100%;
-        }
-
-        .gantt-bar-progress {
-            height: 100%;
-            background-color: #3b82f6; /* Blue progress color indication */
-            width: 0%;
+            pointer-events: none; /* Block click/drag actions completely */
+            box-sizing: border-box;
         }
     </style>
 </head>
 <body>
+
+    <div class="legend-container">
+        <div class="legend-item">
+            <div class="legend-color" style="background-color: #ffccd5;"></div>
+            <span>Queue / Waiting</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-color" style="background-color: #3b82f6;"></div>
+            <span>Core Training</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-color" style="background-color: #10b981;"></div>
+            <span>Advanced Training</span>
+        </div>
+    </div>
 
     <div class="gantt-wrapper">
         <div class="gantt-grid" id="ganttGrid">
@@ -141,85 +182,176 @@
 
     <script>
         // =========================================================================
-        // HUMAN READABLE DATA TABLE
+        // DYNAMIC TRACK DATA AND STRUCTURAL CONFIGURATION
+        //
+        // startWeek:  Used if the track is independent (dependsOn is blank).
+        // dependsOn:  The ID string of the parent track you want to follow.
+        // relativeTo: 'start' (starts X weeks after parent starts)
+        //             'finish' (starts Y weeks after parent completely finishes)
+        // offsetWeeks: The number of weeks to delay relative to your 'relativeTo' choice.
         // =========================================================================
-        const projectData = [
-            { id: 'task-1', name: 'Task 1: Basic SEM', durationWeeks: 4, startWeek: 0, dependsOn: '', relativeTo: '', offsetWeeks: 0, progress: 60 },
-            { id: 'task-2', name: 'Task 2: Sub-System', durationWeeks: 3, startWeek: 0, dependsOn: 'task-1', relativeTo: 'start', offsetWeeks: 2, progress: 20 },
-            { id: 'task-3', name: 'Task 3: Integration', durationWeeks: 5, startWeek: 0, dependsOn: 'task-2', relativeTo: 'finish', offsetWeeks: 1, progress: 0 }
+        const HEX_WAIT = '#ffccd5';
+        const HEX_CORE = '#3b82f6';
+        const HEX_ADVD = '#10b981';
+
+        const trainingGroups = [
+            {
+                groupName: "Scanning Electron Microscopy (SEM)",
+                tracks: [
+                    {
+                        id: 'sem-basic',
+                        name: 'SEM Basic',
+                        startWeek: 0,
+                        dependsOn: '',
+                        relativeTo: '',
+                        offsetWeeks: 0,
+                        phases: [
+                            { name: 'Waiting', duration: 2, color: HEX_WAIT },
+                            { name: 'Training', duration: 2, color: HEX_CORE },
+                            { name: 'Advanced', duration: 2, color: HEX_ADVD }
+                        ]
+                    },
+                    {
+                        id: 'sem-fib',
+                        name: 'SEM FIB',
+                        startWeek: 0, 
+                        dependsOn: 'sem-basic', 
+                        relativeTo: 'finish', // Relies on basic track completion
+                        offsetWeeks: -1,      // Starts 1 week before completion (Wk 5)
+                        phases: [
+                            { name: 'Training', duration: 4, color: HEX_CORE },
+                            { name: 'Advanced', duration: 8, color: HEX_ADVD }
+                        ]
+                    }
+                ]
+            },
+            {
+                groupName: "Laser Optics (LO)",
+                tracks: [
+                    {
+                        id: 'lo-basic',
+                        name: 'LO Basic',
+                        startWeek: 0,
+                        dependsOn: '',
+                        relativeTo: '',
+                        offsetWeeks: 0,
+                        phases: [
+                            { name: 'Waiting', duration: 2, color: HEX_WAIT },
+                            { name: 'Training', duration: 2, color: HEX_CORE },
+                            { name: 'Advanced', duration: 2, color: HEX_ADVD }
+                        ]
+                    },
+                    {
+                        id: 'lo-tirf',
+                        name: 'LO TIRF',
+                        startWeek: 0,
+                        dependsOn: 'lo-basic',
+                        relativeTo: 'finish', // Relies on basic track completion
+                        offsetWeeks: -1,      // Starts 1 week before completion (Wk 5)
+                        phases: [
+                            { name: 'Training', duration: 4, color: HEX_CORE },
+                            { name: 'Advanced', duration: 8, color: HEX_ADVD }
+                        ]
+                    }
+                ]
+            }
         ];
         // =========================================================================
 
-        const taskMap = {};
+        const trackMap = {};
         let maxWeekReached = 0;
 
-        // Process dependencies and calculate relative positions based entirely on numbers
-        projectData.forEach(task => {
-            let calculatedStart = 0;
+        // Step 1: Process dependency tree paths sequentially
+        trainingGroups.forEach(group => {
+            group.tracks.forEach(track => {
+                let currentStart = track.startWeek;
 
-            if (task.dependsOn && taskMap[task.dependsOn]) {
-                const parent = taskMap[task.dependsOn];
-                if (task.relativeTo === 'start') {
-                    calculatedStart = parent._start + task.offsetWeeks;
-                } else if (task.relativeTo === 'finish') {
-                    calculatedStart = parent._end + task.offsetWeeks;
-                } else {
-                    calculatedStart = task.startWeek;
+                // If a parent dependency exists, calculate the cascading start point dynamically
+                if (track.dependsOn && trackMap[track.dependsOn]) {
+                    const parent = trackMap[track.dependsOn];
+                    if (track.relativeTo === 'start') {
+                        currentStart = parent._totalStart + track.offsetWeeks;
+                    } else if (track.relativeTo === 'finish') {
+                        currentStart = parent._totalEnd + track.offsetWeeks;
+                    }
                 }
-            } else {
-                calculatedStart = task.startWeek;
-            }
 
-            // Lock values so tasks can never scale backwards into negative scopes
-            if (calculatedStart < 0) calculatedStart = 0;
+                // Prevent columns from pushing backwards into negative space
+                if (currentStart < 0) currentStart = 0;
 
-            task._start = calculatedStart;
-            task._end = calculatedStart + task.durationWeeks;
-            taskMap[task.id] = task;
+                track._totalStart = currentStart;
+                track._calculatedPhases = [];
 
-            if (task._end > maxWeekReached) {
-                maxWeekReached = task._end;
-            }
+                // Loop sequentially across each training block segment to stack durations
+                track.phases.forEach(phase => {
+                    const phaseStart = currentStart;
+                    const phaseEnd = currentStart + phase.duration;
+                    
+                    track._calculatedPhases.push({
+                        start: phaseStart,
+                        end: phaseEnd,
+                        duration: phase.duration,
+                        color: phase.color
+                    });
+
+                    currentStart = phaseEnd; 
+                });
+
+                track._totalEnd = currentStart;
+                trackMap[track.id] = track; // Cache reference for downstream dependency queries
+
+                if (track._totalEnd > maxWeekReached) {
+                    maxWeekReached = track._totalEnd;
+                }
+            });
         });
 
         const totalColumnsCount = maxWeekReached;
         const gridContainer = document.getElementById('ganttGrid');
 
-        // 1. Generate Header Row (Clean, simple sequential Week numbering)
-        let headerHtml = `<div class="gantt-row header"><div class="label-column">Tasks</div><div class="timeline-column">`;
-        for (let i = 0; i < totalColumnsCount; i++) {
+        // Step 2: Render Header Elements
+        let headerHtml = `<div class="gantt-row header"><div class="label-column">Training Track</div><div class="timeline-column">`;
+        for (let i = 0; i <= totalColumnsCount; i++) {
             headerHtml += `<div class="week-cell">Wk ${i}</div>`;
         }
         headerHtml += `</div></div>`;
         gridContainer.innerHTML += headerHtml;
 
-        // 2. Generate Content Rows
-        projectData.forEach(task => {
-            // Calculate percentage metrics to map styles straight into flexbox blocks
-            const startPercent = (task._start / totalColumnsCount) * 100;
-            const widthPercent = (task.durationWeeks / totalColumnsCount) * 100;
+        // Step 3: Render Structural Rows grouped by operational modules
+        trainingGroups.forEach(group => {
+            let groupRowHtml = `<div class="group-header">${group.groupName}</div>`;
+            gridContainer.innerHTML += groupRowHtml;
 
-            let rowHtml = `
-                <div class="gantt-row">
-                    <div class="label-column" title="${task.name}">${task.name}</div>
-                    <div class="timeline-column">
-                        <div class="row-guides">`;
-            
-            for (let i = 0; i < totalColumnsCount; i++) {
-                rowHtml += `<div class="guide-cell"></div>`;
-            }
-            
-            rowHtml += `
+            group.tracks.forEach(track => {
+                let rowHtml = `
+                    <div class="gantt-row">
+                        <div class="label-column" title="${track.name}">${track.name}</div>
+                        <div class="timeline-column">
+                            <div class="row-guides">`;
+                
+                for (let i = 0; i <= totalColumnsCount; i++) {
+                    rowHtml += `<div class="guide-cell"></div>`;
+                }
+                
+                rowHtml += `</div>`;
+
+                // Draw independent custom blocks for each distinct training segment
+                track._calculatedPhases.forEach(p => {
+                    const leftPercent = (p.start / (totalColumnsCount + 1)) * 100;
+                    const widthPercent = (p.duration / (totalColumnsCount + 1)) * 100;
+
+                    rowHtml += `
+                        <div class="phase-bar" style="left: ${leftPercent}%; width: ${widthPercent}%; background-color: ${p.color};">
                         </div>
-                        <div class="gantt-bar-container" style="left: ${startPercent}%; width: ${widthPercent}%;">
-                            <div class="gantt-bar">
-                                <div class="gantt-bar-progress" style="width: ${task.progress}%;"></div>
-                            </div>
+                    `;
+                });
+
+                rowHtml += `
                         </div>
                     </div>
-                </div>
-            `;
-            gridContainer.innerHTML += rowHtml;
+                `;
+                gridContainer.innerHTML += rowHtml;
+            });
         });
     </script>
 </body>
