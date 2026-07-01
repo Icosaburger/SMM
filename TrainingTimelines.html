@@ -153,7 +153,7 @@
             position: absolute;
             height: 22px;
             border-radius: 4px;
-            pointer-events: none; /* Block click/drag actions completely */
+            pointer-events: none;
             box-sizing: border-box;
         }
     </style>
@@ -184,11 +184,12 @@
         // =========================================================================
         // DYNAMIC TRACK DATA AND STRUCTURAL CONFIGURATION
         //
-        // startWeek:  Used if the track is independent (dependsOn is blank).
-        // dependsOn:  The ID string of the parent track you want to follow.
-        // relativeTo: 'start' (starts X weeks after parent starts)
-        //             'finish' (starts Y weeks after parent completely finishes)
-        // offsetWeeks: The number of weeks to delay relative to your 'relativeTo' choice.
+        // startWeek:        Used if the track is independent (dependsOn is blank).
+        // dependsOn:        The ID string of the parent track you want to follow.
+        // relativeTo:       'start' (parent start), 'finish' (parent total end),
+        //                   or 'phase-finish' (specific phase finish marker).
+        // relativeToPhase:  Name of the parent phase to check if using 'phase-finish'.
+        // offsetWeeks:      Number of weeks to delay/offset from your milestone choice.
         // =========================================================================
         const HEX_WAIT = '#ffccd5';
         const HEX_CORE = '#3b82f6';
@@ -204,6 +205,7 @@
                         startWeek: 0,
                         dependsOn: '',
                         relativeTo: '',
+                        relativeToPhase: '',
                         offsetWeeks: 0,
                         phases: [
                             { name: 'Waiting', duration: 2, color: HEX_WAIT },
@@ -216,8 +218,9 @@
                         name: 'SEM FIB',
                         startWeek: 0, 
                         dependsOn: 'sem-basic', 
-                        relativeTo: 'finish', // Relies on basic track completion
-                        offsetWeeks: -1,      // Starts 1 week before completion (Wk 5)
+                        relativeTo: 'phase-finish', // Hooks directly into a single phase milestone
+                        relativeToPhase: 'Training', // Targets completion of Core Training (Wk 4)
+                        offsetWeeks: 1,              // Delays it to start 1 week later (Wk 5)
                         phases: [
                             { name: 'Training', duration: 4, color: HEX_CORE },
                             { name: 'Advanced', duration: 8, color: HEX_ADVD }
@@ -226,7 +229,7 @@
                 ]
             },
             {
-                groupName: "Light Optical (LO)",
+                groupName: "Laser Optics (LO)",
                 tracks: [
                     {
                         id: 'lo-basic',
@@ -234,6 +237,7 @@
                         startWeek: 0,
                         dependsOn: '',
                         relativeTo: '',
+                        relativeToPhase: '',
                         offsetWeeks: 0,
                         phases: [
                             { name: 'Waiting', duration: 2, color: HEX_WAIT },
@@ -246,8 +250,9 @@
                         name: 'LO TIRF',
                         startWeek: 0,
                         dependsOn: 'lo-basic',
-                        relativeTo: 'finish', // Relies on basic track completion
-                        offsetWeeks: -1,      // Starts 1 week before completion (Wk 5)
+                        relativeTo: 'phase-finish', // Hooks directly into a single phase milestone
+                        relativeToPhase: 'Training', // Targets completion of Core Training (Wk 4)
+                        offsetWeeks: 1,              // Delays it to start 1 week later (Wk 5)
                         phases: [
                             { name: 'Training', duration: 4, color: HEX_CORE },
                             { name: 'Advanced', duration: 8, color: HEX_ADVD }
@@ -266,21 +271,24 @@
             group.tracks.forEach(track => {
                 let currentStart = track.startWeek;
 
-                // If a parent dependency exists, calculate the cascading start point dynamically
                 if (track.dependsOn && trackMap[track.dependsOn]) {
                     const parent = trackMap[track.dependsOn];
+                    
                     if (track.relativeTo === 'start') {
                         currentStart = parent._totalStart + track.offsetWeeks;
                     } else if (track.relativeTo === 'finish') {
                         currentStart = parent._totalEnd + track.offsetWeeks;
+                    } else if (track.relativeTo === 'phase-finish' && parent._phaseEndMarkers[track.relativeToPhase] !== undefined) {
+                        // Dynamically sets baseline to the exact week the specified parent phase wrapped up
+                        currentStart = parent._phaseEndMarkers[track.relativeToPhase] + track.offsetWeeks;
                     }
                 }
 
-                // Prevent columns from pushing backwards into negative space
                 if (currentStart < 0) currentStart = 0;
 
                 track._totalStart = currentStart;
                 track._calculatedPhases = [];
+                track._phaseEndMarkers = {}; // Stores end week markers for child reference maps
 
                 // Loop sequentially across each training block segment to stack durations
                 track.phases.forEach(phase => {
@@ -295,10 +303,11 @@
                     });
 
                     currentStart = phaseEnd; 
+                    track._phaseEndMarkers[phase.name] = phaseEnd; // Log when this specific phase block stops
                 });
 
                 track._totalEnd = currentStart;
-                trackMap[track.id] = track; // Cache reference for downstream dependency queries
+                trackMap[track.id] = track; 
 
                 if (track._totalEnd > maxWeekReached) {
                     maxWeekReached = track._totalEnd;
