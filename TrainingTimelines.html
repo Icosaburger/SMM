@@ -126,20 +126,46 @@
             background-color: #f1f5f9;
         }
 
+        /* Master Timeline Header Stack */
         .gantt-row.header {
-            height: 30px;
-            min-height: 30px;
-            max-height: 30px;
+            height: auto;
+            min-height: 44px;
+            max-height: 44px;
             border-bottom: 2px solid #cbd5e1;
             font-weight: 600;
             font-size: 11px;
             color: #4a5568;
         }
 
+        .header-timeline-wrapper {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+
+        .header-top-title {
+            text-align: center;
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: 700;
+            color: #718096;
+            padding-top: 4px;
+            border-bottom: 1px dashed #e2e8f0;
+            padding-bottom: 2px;
+        }
+
+        .header-numbers-row {
+            display: flex;
+            flex-grow: 1;
+            align-items: center;
+        }
+
         /* Column Settings */
         .label-column {
-            width: 280px;
-            min-width: 280px;
+            width: 320px;
+            min-width: 320px;
             font-size: 13px;
             font-weight: 500;
             color: #1a202c;
@@ -272,6 +298,62 @@
                     { technique: "In-situ experiments", prereq: "Meaningful Results in High Resolution TEM Imaging", wait: 0, cat2: 2, results: 6 },
                     { technique: "Cryo-TEM", prereq: "Meaningful Results in High Resolution TEM Imaging", wait: 0, cat2: 3, results: 8 }
                 ]
+            },
+            {
+                sectionTitle: "BIOLOGICAL SPECIMEN PREPARATION SECTION",
+                items: [
+                    { technique: "SEM Sample Preparation", prereq: "None", wait: 1, cat2: 1, results: 4 },
+                    { technique: "TEM Sample Preparation", prereq: "None", wait: 1, cat2: 3, results: 4 },
+                    { technique: "CPD", prereq: "None", wait: 0, cat2: 1, results: 2 },
+                    { technique: "Microtomy", prereq: "None", wait: 0, cat2: 1, results: 4 },
+                    { technique: "High Pressure Freezing", prereq: "None", wait: 0, cat2: 1, results: 2 },
+                    { technique: "Automatic Freeze Substitution", prereq: "None", wait: 0, cat2: 1, results: 2 },
+                    { technique: "Cryo-ultramicrotomy", prereq: "None", wait: 0, cat2: 2, results: 8 },
+                    { technique: "Vitrobot", prereq: "None", wait: 0, cat2: 2, results: 6 },
+                    { technique: "Formvar Grid Casting", prereq: "None", wait: 0, cat2: 2, results: 0 }
+                ]
+            },
+            {
+                sectionTitle: "MATERIAL SPECIMEN PREPARATION SECTION",
+                items: [
+                    { technique: "Diamond Saw", prereq: "None", wait: 0, cat2: 0, results: 0 },
+                    { technique: "Tripod Polishing", prereq: "None", wait: 0, cat2: 1, results: 4 },
+                    { technique: "Electropolishing", prereq: "None", wait: 0, cat2: 1, results: 2 },
+                    { technique: "Ion Beam Thinning / PIPS", prereq: "None", wait: 0, cat2: 1, results: 2 },
+                    { technique: "Mounting / Grinding / Polishing", prereq: "None", wait: 0, cat2: 0, results: 0 },
+                    { technique: "Chemical Etching", prereq: "None", wait: 0, cat2: 1, results: 4 }
+                ]
+            },
+            {
+                sectionTitle: "LIGHT & OPTICAL SECTION",
+                items: [
+                    { technique: "Cell Culture (requires access to cell line)", prereq: "None", wait: 0, cat2: 2, results: 8 },
+                    { technique: "Basic Transmission / Reflection Microscopy", prereq: "None", wait: 0, cat2: 1, results: 2 },
+                    { technique: "Basic Confocal Microscopy", prereq: "None", wait: 0, cat2: 1, results: 4 },
+                    { technique: "Basic Fluorescence Microscopy", prereq: "None", wait: 0, cat2: 1, results: 2 },
+                    { technique: "PC2 Induction", prereq: "None", wait: 0, cat2: 0, results: 0 },
+                    { technique: "Fluorescence Lifetime Imaging (FLIM)", prereq: "None", wait: 0, cat2: 1, results: 4 },
+                    { technique: "Live-cell Imaging", prereq: "None", wait: 0, cat2: 2, results: 4 },
+                    { technique: "Superresolution (TIRF, GSD)", prereq: "None", wait: 0, cat2: 2, results: 6 },
+                    { technique: "Multiphoton", prereq: "None", wait: 0, cat2: 1, results: 4 }
+                ]
+            },
+            {
+                sectionTitle: "XRM SECTION",
+                items: [
+                    { technique: "X-Ray tomography", prereq: "None", wait: 2, cat2: 2, results: 4 },
+                    { technique: "Data Reconstruction", prereq: "Category 2 in X-Ray tomography", wait: 0, cat2: 1, results: 8 },
+                    { technique: "In-situ XRM rigs", prereq: "Meaningful Results in X-Ray tomography", wait: 0, cat2: 1, results: 2 }
+                ]
+            },
+            {
+                sectionTitle: "ATOM PROBE TOMOGRAPHY SECTION",
+                items: [
+                    { technique: "Sample Preparation - Electropolishing", prereq: "None", wait: 0, cat2: 1, results: 4 },
+                    { technique: "APT - LEAP", prereq: "None", wait: 2, cat2: 2, results: 2 },
+                    { technique: "APT - Laser", prereq: "None", wait: 3, cat2: 3, results: 4 },
+                    { technique: "Data Reconstruction", prereq: "None", wait: 1, cat2: 1, results: 8 }
+                ]
             }
         ];
         // =========================================================================
@@ -348,12 +430,22 @@
         const totalColumnsCount = maxWeekReached;
         const gridContainer = document.getElementById('ganttGrid');
 
-        // Step 2: Render Main Grid Timeline Header
-        let headerHtml = `<div class="gantt-row header"><div class="label-column">Technique</div><div class="timeline-column">`;
+        // Step 2: Render Main Grid Timeline Header with "Week Number" Span
+        let headerHtml = `
+            <div class="gantt-row header">
+                <div class="label-column" style="display: flex; align-items: center;">Technique</div>
+                <div class="header-timeline-wrapper">
+                    <div class="header-top-title">Week Number</div>
+                    <div class="header-numbers-row">
+        `;
         for (let i = 0; i <= totalColumnsCount; i++) {
-            headerHtml += `<div class="week-cell">Wk ${i}</div>`;
+            headerHtml += `<div class="week-cell">${i}</div>`;
         }
-        headerHtml += `</div></div>`;
+        headerHtml += `
+                    </div>
+                </div>
+            </div>
+        `;
         gridContainer.innerHTML += headerHtml;
 
         // Step 3: Render Sections with Collapsible Containers (Defaulting to Closed/Collapsed)
@@ -361,7 +453,6 @@
             const sectionId = `section-container-${index}`;
             const headerId = `section-header-${index}`;
 
-            // Modified here: Appended 'collapsed' class targets directly on initial render layout strings
             let groupRowHtml = `
                 <div class="group-header collapsed" id="${headerId}" onclick="toggleSection('${sectionId}', '${headerId}')">
                     <span>${section.sectionTitle}</span>
