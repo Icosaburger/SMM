@@ -449,11 +449,12 @@
 
         // Step 3: Render Sections with Collapsible Containers (Defaulting to Closed/Collapsed)
         sectionsData.forEach((section, index) => {
+            const sectionSlug = section.sectionTitle.toLowerCase().replace(/[^a-z0-9]+/g, '-');
             const sectionId = `section-container-${index}`;
             const headerId = `section-header-${index}`;
 
             let groupRowHtml = `
-                <div class="group-header collapsed" id="${headerId}" onclick="toggleSection('${sectionId}', '${headerId}')">
+                <div class="group-header collapsed" id="${headerId}" data-slug="${sectionSlug}" onclick="toggleSection('${sectionId}', '${headerId}')">
                     <span>${section.sectionTitle}</span>
                     <span class="accordion-arrow"></span>
                 </div>
@@ -510,6 +511,28 @@
                 header.classList.add('collapsed');
             }
         }
+
+        // Put this right below your toggleSection function
+        window.addEventListener('DOMContentLoaded', () => {
+            // 1. Get the hash from the URL (e.g., "#sem-section") and remove the "#"
+            const currentHash = window.location.hash.toLowerCase().substring(1);
+            
+            if (currentHash) {
+                // 2. Find the header element that matches this slug
+                const targetHeader = document.querySelector(`[data-slug="${currentHash}"]`);
+                
+                if (targetHeader) {
+                    // 3. Extract the container ID and header ID from its onclick attribute
+                    // or directly trigger its click handler to fire the existing open animation
+                    setTimeout(() => {
+                        targetHeader.click();
+                        
+                        // Optional: Smoothly scroll the window down to the newly opened section
+                        targetHeader.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }, 100); // Tiny delay ensures the DOM layout is completely ready
+                }
+            }
+        });
     </script>
 </body>
 </html>
