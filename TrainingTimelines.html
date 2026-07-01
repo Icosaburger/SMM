@@ -14,7 +14,7 @@
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
             margin: 10px;
             background-color: #fff;
-            overflow-x: hidden; /* Prevent body-level scrolling */
+            overflow-x: hidden; 
         }
 
         .gantt-wrapper {
@@ -27,7 +27,6 @@
             box-sizing: border-box;
         }
 
-        /* Force the library's SVG wrapper to scale down to the screen width */
         .gantt-container {
             width: 100% !important;
             max-width: 100% !important;
@@ -66,7 +65,7 @@
             font-weight: 600;
             fill: #42526e;
             position: absolute;
-            transform: translate(12px, -25px); /* Positions text perfectly inside header bar */
+            transform: translate(12px, -25px); 
             font-family: sans-serif;
         }
     </style>
@@ -90,14 +89,13 @@
         ];
         // =========================================================================
 
-        // Automatically anchor to the start of the current week (Monday)
+        // Safely calculate the current week's Monday anchor point
         function getStartOfWeek() {
             const today = new Date();
             const day = today.getDay();
-            // Adjust day index so Monday = 0, Tuesday = 1... Sunday = 6
             const diff = today.getDate() - day + (day === 0 ? -6 : 1); 
             const monday = new Date(today.setDate(diff));
-            monday.setHours(0, 0, 0, 0); // Normalize time string elements
+            monday.setHours(0, 0, 0, 0); 
             return monday;
         }
 
@@ -109,6 +107,7 @@
             return result;
         }
 
+        // Output formatting required by standard charting objects
         function formatDate(date) {
             return date.toISOString().split('T')[0];
         }
@@ -133,11 +132,6 @@
                 startCalculatedDate = addDays(BASE_DATE, task.startWeek * 7);
             }
 
-            // GUARANTEE NO PAST ENTRIES: Force start date to be today/BASE_DATE or later
-            if (startCalculatedDate < BASE_DATE) {
-                startCalculatedDate = new Date(BASE_DATE);
-            }
-
             const endCalculatedDate = addDays(startCalculatedDate, task.durationWeeks * 7);
 
             task._rawStart = startCalculatedDate;
@@ -159,7 +153,7 @@
             });
         });
 
-        // Calculate maximum layout constraints to guarantee it squeezes into view
+        // Dynamic screen width sizing calculations
         const screenPadding = 30;
         const leftLabelSpacers = 140;
         const netChartTimelineWidth = window.innerWidth - screenPadding - leftLabelSpacers;
@@ -187,6 +181,24 @@
                 `;
             }
         });
+
+        // FORCE THE RENDERING VIEWPORT WINDOW:
+        // Adjusts the internal SVG viewBox coordinates so the graph view starts exactly on 
+        // our Monday base anchor date, rendering past days invisible.
+        try {
+            const startX = gantt.get_x_pos(BASE_DATE);
+            const svgEl = document.getElementById('gantt');
+            if (svgEl && startX > 0) {
+                const currentViewBox = svgEl.getAttribute('viewBox');
+                if (currentViewBox) {
+                    const parts = currentViewBox.split(' ');
+                    parts[0] = startX; // Shift view window directly to Monday position coordinate
+                    svgEl.setAttribute('viewBox', parts.join(' '));
+                }
+            }
+        } catch (e) {
+            console.log("Viewport adjustment deferred until full canvas mount.");
+        }
     </script>
 </body>
 </html>
