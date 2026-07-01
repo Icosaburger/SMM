@@ -3,79 +3,140 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dynamic Relative Gantt Chart</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/frappe-gantt/0.6.1/frappe-gantt.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/frappe-gantt/0.6.1/frappe-gantt.min.js"></script>
+    <title>Relative CSS Gantt Chart</title>
     <style>
-        /* =========================================================================
-           STRICT SCREENWIDTH & SCALING OVERRIDES
-           ========================================================================= */
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
             margin: 10px;
             background-color: #fff;
-            overflow-x: hidden; 
+            color: #333;
+            user-select: none; /* Disables text highlighting/interactivity */
         }
 
         .gantt-wrapper {
-            width: 100% !important;
-            max-width: 100% !important;
-            overflow-x: hidden;
+            width: 100%;
+            max-width: 100%;
             border: 1px solid #eaeaea;
-            border-radius: 5px;
+            border-radius: 6px;
             background: #fafafa;
             box-sizing: border-box;
+            padding: 10px;
+            overflow: hidden;
         }
 
-        .gantt-container {
-            width: 100% !important;
-            max-width: 100% !important;
-            overflow: hidden !important;
+        /* Chart Layout Grid */
+        .gantt-grid {
+            display: flex;
+            flex-direction: column;
+            width: 100%;
         }
 
-        svg#gantt {
-            width: 100% !important;
-            max-width: 100% !important;
-            height: auto !important;
+        /* Header & Row Setup */
+        .gantt-row {
+            display: flex;
+            align-items: center;
+            height: 35px;
+            border-bottom: 1px solid #f0f0f0;
         }
 
-        /* =========================================================================
-           COMPLETE CALENDAR DATE REMOVAL & WEEK NUMBER GENERATOR
-           ========================================================================= */
-        
-        /* Hide both standard text rows (removes all calendar dates and months completely) */
-        .gantt .grid-header .upper-text,
-        .gantt .grid-header .lower-text {
-            display: none !important;
-        }
-
-        /* Set up a CSS counter on the header row container */
-        .gantt .grid-header {
-            counter-reset: week-counter -1; /* Starts counting from Week 0 */
-        }
-
-        /* Target the underlying column grid lines to inject sequential week text */
-        .gantt .grid .tick {
-            counter-increment: week-counter;
-        }
-
-        .gantt .grid .tick::after {
-            content: "Wk " counter(week-counter);
-            font-size: 11px;
+        .gantt-row.header {
+            height: 30px;
+            border-bottom: 2px solid #e2e8f0;
             font-weight: 600;
-            fill: #42526e;
+            font-size: 11px;
+            color: #4a5568;
+        }
+
+        .gantt-row:last-child {
+            border-bottom: none;
+        }
+
+        /* Column Allocations */
+        .label-column {
+            width: 150px;
+            min-width: 150px;
+            font-size: 13px;
+            color: #1a202c;
+            padding-right: 10px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .timeline-column {
+            flex-grow: 1;
+            display: flex;
+            position: relative;
+            height: 100%;
+            align-items: center;
+        }
+
+        /* Header Week Cells */
+        .week-cell {
+            flex: 1;
+            text-align: center;
+            border-left: 1px solid #edf2f7;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .week-cell:first-child {
+            border-left: none;
+        }
+
+        /* Background Grid Guides for Rows */
+        .row-guides {
             position: absolute;
-            transform: translate(12px, -25px); 
-            font-family: sans-serif;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            pointer-events: none;
+        }
+
+        .guide-cell {
+            flex: 1;
+            height: 100%;
+            border-left: 1px solid #edf2f7;
+        }
+
+        .guide-cell:first-child {
+            border-left: none;
+        }
+
+        /* Gantt Bar Styling (Completely Static) */
+        .gantt-bar-container {
+            position: absolute;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            pointer-events: none; /* Disables all mouse clicks, drags, and hovers */
+        }
+
+        .gantt-bar {
+            height: 100%;
+            background-color: #a3b8cc; /* Solid timeline fill background */
+            border-radius: 4px;
+            position: relative;
+            overflow: hidden;
+            width: 100%;
+        }
+
+        .gantt-bar-progress {
+            height: 100%;
+            background-color: #3b82f6; /* Blue progress color indication */
+            width: 0%;
         }
     </style>
 </head>
 <body>
 
     <div class="gantt-wrapper">
-        <div class="gantt-container">
-            <svg id="gantt"></svg>
-        </div>
+        <div class="gantt-grid" id="ganttGrid">
+            </div>
     </div>
 
     <script>
@@ -89,116 +150,77 @@
         ];
         // =========================================================================
 
-        // Safely calculate the current week's Monday anchor point
-        function getStartOfWeek() {
-            const today = new Date();
-            const day = today.getDay();
-            const diff = today.getDate() - day + (day === 0 ? -6 : 1); 
-            const monday = new Date(today.setDate(diff));
-            monday.setHours(0, 0, 0, 0); 
-            return monday;
-        }
-
-        const BASE_DATE = getStartOfWeek(); 
-
-        function addDays(date, days) {
-            const result = new Date(date);
-            result.setDate(result.getDate() + days);
-            return result;
-        }
-
-        // Output formatting required by standard charting objects
-        function formatDate(date) {
-            return date.toISOString().split('T')[0];
-        }
-
-        const processedTasks = [];
         const taskMap = {};
-        let totalProjectWeeks = 0;
+        let maxWeekReached = 0;
 
+        // Process dependencies and calculate relative positions based entirely on numbers
         projectData.forEach(task => {
-            let startCalculatedDate;
+            let calculatedStart = 0;
 
             if (task.dependsOn && taskMap[task.dependsOn]) {
                 const parent = taskMap[task.dependsOn];
                 if (task.relativeTo === 'start') {
-                    startCalculatedDate = addDays(parent._rawStart, task.offsetWeeks * 7);
+                    calculatedStart = parent._start + task.offsetWeeks;
                 } else if (task.relativeTo === 'finish') {
-                    startCalculatedDate = addDays(parent._rawEnd, task.offsetWeeks * 7);
+                    calculatedStart = parent._end + task.offsetWeeks;
                 } else {
-                    startCalculatedDate = addDays(BASE_DATE, task.startWeek * 7);
+                    calculatedStart = task.startWeek;
                 }
             } else {
-                startCalculatedDate = addDays(BASE_DATE, task.startWeek * 7);
+                calculatedStart = task.startWeek;
             }
 
-            const endCalculatedDate = addDays(startCalculatedDate, task.durationWeeks * 7);
+            // Lock values so tasks can never scale backwards into negative scopes
+            if (calculatedStart < 0) calculatedStart = 0;
 
-            task._rawStart = startCalculatedDate;
-            task._rawEnd = endCalculatedDate;
+            task._start = calculatedStart;
+            task._end = calculatedStart + task.durationWeeks;
             taskMap[task.id] = task;
 
-            const weeksFromStart = Math.ceil((endCalculatedDate - BASE_DATE) / (1000 * 60 * 60 * 24 * 7));
-            if (weeksFromStart > totalProjectWeeks) {
-                totalProjectWeeks = weeksFromStart;
-            }
-
-            processedTasks.push({
-                id: task.id,
-                name: task.name,
-                start: formatDate(startCalculatedDate),
-                end: formatDate(endCalculatedDate),
-                progress: task.progress,
-                dependencies: task.dependsOn
-            });
-        });
-
-        // Dynamic screen width sizing calculations
-        const screenPadding = 30;
-        const leftLabelSpacers = 140;
-        const netChartTimelineWidth = window.innerWidth - screenPadding - leftLabelSpacers;
-        const fitColumnWidth = Math.floor(netChartTimelineWidth / (totalProjectWeeks + 1));
-
-        // Initialize the layout
-        const gantt = new Gantt("#gantt", processedTasks, {
-            header_height: 40,
-            column_width: fitColumnWidth,
-            step: 24,
-            view_mode: 'Week', 
-            bar_height: 20,
-            bar_corner_radius: 4,
-            arrow_curve: 5,
-            padding: 15,
-            date_format: 'YYYY-MM-DD',
-            custom_popup_html: function(task) {
-                const original = taskMap[task.id];
-                return `
-                    <div class="details-container" style="padding: 10px; font-size: 13px;">
-                        <h5 style="margin:0 0 5px 0; color:#172b4d;">${task.name}</h5>
-                        <p style="margin:3px 0; color:#42526e;"><strong>Duration:</strong> ${original.durationWeeks} weeks</p>
-                        <p style="margin:3px 0; color:#42526e;"><strong>Progress:</strong> ${task.progress}%</p>
-                    </div>
-                `;
+            if (task._end > maxWeekReached) {
+                maxWeekReached = task._end;
             }
         });
 
-        // FORCE THE RENDERING VIEWPORT WINDOW:
-        // Adjusts the internal SVG viewBox coordinates so the graph view starts exactly on 
-        // our Monday base anchor date, rendering past days invisible.
-        try {
-            const startX = gantt.get_x_pos(BASE_DATE);
-            const svgEl = document.getElementById('gantt');
-            if (svgEl && startX > 0) {
-                const currentViewBox = svgEl.getAttribute('viewBox');
-                if (currentViewBox) {
-                    const parts = currentViewBox.split(' ');
-                    parts[0] = startX; // Shift view window directly to Monday position coordinate
-                    svgEl.setAttribute('viewBox', parts.join(' '));
-                }
-            }
-        } catch (e) {
-            console.log("Viewport adjustment deferred until full canvas mount.");
+        const totalColumnsCount = maxWeekReached;
+        const gridContainer = document.getElementById('ganttGrid');
+
+        // 1. Generate Header Row (Clean, simple sequential Week numbering)
+        let headerHtml = `<div class="gantt-row header"><div class="label-column">Tasks</div><div class="timeline-column">`;
+        for (let i = 0; i < totalColumnsCount; i++) {
+            headerHtml += `<div class="week-cell">Wk ${i}</div>`;
         }
+        headerHtml += `</div></div>`;
+        gridContainer.innerHTML += headerHtml;
+
+        // 2. Generate Content Rows
+        projectData.forEach(task => {
+            // Calculate percentage metrics to map styles straight into flexbox blocks
+            const startPercent = (task._start / totalColumnsCount) * 100;
+            const widthPercent = (task.durationWeeks / totalColumnsCount) * 100;
+
+            let rowHtml = `
+                <div class="gantt-row">
+                    <div class="label-column" title="${task.name}">${task.name}</div>
+                    <div class="timeline-column">
+                        <div class="row-guides">`;
+            
+            for (let i = 0; i < totalColumnsCount; i++) {
+                rowHtml += `<div class="guide-cell"></div>`;
+            }
+            
+            rowHtml += `
+                        </div>
+                        <div class="gantt-bar-container" style="left: ${startPercent}%; width: ${widthPercent}%;">
+                            <div class="gantt-bar">
+                                <div class="gantt-bar-progress" style="width: ${task.progress}%;"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            gridContainer.innerHTML += rowHtml;
+        });
     </script>
 </body>
 </html>
