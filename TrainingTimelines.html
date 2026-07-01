@@ -517,21 +517,52 @@
 
         // Put this right below your toggleSection function
         window.addEventListener('DOMContentLoaded', () => {
-            // 1. Get the hash from the URL (e.g., "#sem-section") and remove the "#"
+            // 1. Get the hash from the URL (e.g., "#sem-section" or "#all") and remove the "#"
             const currentHash = window.location.hash.toLowerCase().substring(1);
-            
+
             if (currentHash) {
-                // 2. Find the header element that matches this slug
+
+                // 2. If the hash is "#all", open every collapsed accordion section
+                if (currentHash === "all") {
+
+                    // Tiny delay ensures the DOM layout is completely ready
+                    setTimeout(() => {
+
+                        // Find every accordion header that is currently collapsed
+                        const allHeaders = document.querySelectorAll('.group-header.collapsed');
+
+                        // Trigger a click on each header to open the section using the
+                        // existing toggleSection() animation and logic
+                        allHeaders.forEach(header => {
+                            header.click();
+                        });
+
+                        // Optional: Smoothly scroll back to the top of the page
+                        window.scrollTo({
+                            top: 0,
+                            behavior: 'smooth'
+                        });
+
+                    }, 100);
+
+                    // Stop here so the individual section logic below is skipped
+                    return;
+                }
+
+                // 3. Find the header element that matches the requested section slug
                 const targetHeader = document.querySelector(`[data-slug="${currentHash}"]`);
-                
+
                 if (targetHeader) {
-                    // 3. Extract the container ID and header ID from its onclick attribute
-                    // or directly trigger its click handler to fire the existing open animation
+
+                    // 4. Trigger its click handler to fire the existing open animation
                     setTimeout(() => {
                         targetHeader.click();
-                        
+
                         // Optional: Smoothly scroll the window down to the newly opened section
-                        targetHeader.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                        targetHeader.scrollIntoView({
+                            behavior: 'smooth',
+                            block: 'start'
+                        });
                     }, 100); // Tiny delay ensures the DOM layout is completely ready
                 }
             }
