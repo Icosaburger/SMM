@@ -9,91 +9,91 @@
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            margin: 20px;
+            margin: 10px;
             background-color: #fff;
             color: #333;
         }
         h2 {
-            font-size: 1.5rem;
-            margin-bottom: 5px;
+            font-size: 1.4rem;
+            margin-bottom: 4px;
             color: #172b4d;
         }
         p.subtitle {
-            font-size: 0.9rem;
+            font-size: 0.85rem;
             color: #6b778c;
-            margin-bottom: 20px;
+            margin-bottom: 15px;
         }
-        .gantt-container {
-            overflow-x: auto;
-            margin-bottom: 20px;
+        
+        /* Force the chart container to fit the exact screen width without forcing a scrollbar */
+        .gantt-wrapper {
+            width: 100%;
+            max-width: 100vw;
+            box-sizing: border-box;
             border: 1px solid #eaeaea;
             border-radius: 5px;
             background: #fafafa;
         }
-        /* Custom adjustment for the popup details padding */
-        .details-container h5 {
-            margin: 0 0 5px 0;
-            color: #172b4d;
-            font-size: 14px;
+        
+        .gantt-container {
+            width: 100%;
+            overflow: hidden; /* Removes local scrollbars */
         }
-        .details-container p {
-            margin: 3px 0;
-            color: #42526e;
+        
+        svg#gantt {
+            width: 100%; /* Forces the SVG element to stay within bounds */
+        }
+
+        /* HIDE DATES FROM HEADER: Targets lower row calendar text strings */
+        .gantt .grid-header .lower-text {
+            display: none !important;
+        }
+
+        /* ADJUST UPPER TEXT STYLE: Centers week markers nicely */
+        .gantt .grid-header .upper-text {
+            transform: translateY(12px);
+            font-weight: 600;
+            fill: #42526e;
         }
     </style>
 </head>
 <body>
 
     <h2>Project Roadmap</h2>
-    <p class="subtitle">Dynamic timeline anchored to today's date with automated dependency cascading.</p>
+    <p class="subtitle">Relative project timeline structured by week numbers.</p>
 
-    <div class="gantt-container">
-        <svg id="gantt"></svg>
+    <div class="gantt-wrapper">
+        <div class="gantt-container">
+            <svg id="gantt"></svg>
+        </div>
     </div>
 
     <script>
         // =========================================================================
-        // HUMAN READABLE DATA TABLE (UPDATE YOUR PROJECT HERE)
-        // 
-        // startWeek: The raw week number if it is an independent task.
-        // durationWeeks: How many weeks the task takes to complete.
-        // dependsOn: ID of the parent task. Leave blank if independent.
-        // relativeTo: 'start' (starts X weeks after parent starts)
-        //             'finish' (starts Y weeks after parent finishes)
-        // offsetWeeks: Number of weeks to delay based on the relativeTo choice.
-        // progress: Number from 0 to 100 representing percentage done.
+        // HUMAN READABLE DATA TABLE
         // =========================================================================
         const projectData = [
             { id: 'task-1', name: 'Task 1: Core Setup', durationWeeks: 4, startWeek: 0, dependsOn: '', relativeTo: '', offsetWeeks: 0, progress: 60 },
-            
-            // Task 2 starts 2 weeks after Task 1 STARTS (Cascades if Task 1 shifts)
             { id: 'task-2', name: 'Task 2: Sub-System', durationWeeks: 3, startWeek: 0, dependsOn: 'task-1', relativeTo: 'start', offsetWeeks: 2, progress: 20 },
-            
-            // Task 3 starts 1 week after Task 2 FINISHES (Cascades if Task 2 shifts)
             { id: 'task-3', name: 'Task 3: Integration', durationWeeks: 5, startWeek: 0, dependsOn: 'task-2', relativeTo: 'finish', offsetWeeks: 1, progress: 0 }
         ];
         // =========================================================================
 
-        // Automatically anchors the timeline to today's date on every page load
         const BASE_DATE = new Date(); 
 
-        // Helper function to add days to a date object
         function addDays(date, days) {
             const result = new Date(date);
             result.setDate(result.getDate() + days);
             return result;
         }
 
-        // Helper to format date into YYYY-MM-DD strings required by the engine
         function formatDate(date) {
             return date.toISOString().split('T')[0];
         }
 
-        // Processing pipeline to calculate real schedule paths from relative properties
         const processedTasks = [];
         const taskMap = {};
+        let totalProjectWeeks = 0;
 
-        // Loop through data to build exact date timelines dynamically
         projectData.forEach(task => {
             let startCalculatedDate;
 
@@ -112,12 +112,16 @@
 
             const endCalculatedDate = addDays(startCalculatedDate, task.durationWeeks * 7);
 
-            // Store internal references so children can access them during the loop execution
             task._rawStart = startCalculatedDate;
             task._rawEnd = endCalculatedDate;
             taskMap[task.id] = task;
 
-            // Map data to the expected library structure
+            // Track absolute duration span from base start to calculate required scale sizing
+            const weeksFromStart = Math.ceil((endCalculatedDate - BASE_DATE) / (1000 * 60 * 60 * 24 * 7));
+            if (weeksFromStart > totalProjectWeeks) {
+                totalProjectWeeks = weeksFromStart;
+            }
+
             processedTasks.push({
                 id: task.id,
                 name: task.name,
@@ -128,10 +132,17 @@
             });
         });
 
-        // Initialize and render the cascading visual timeline
+        // DYNAMIC SCREENWIDTH CALCULATION:
+        // Allocates 160px baseline space for task labels on the left side, 
+        // then divides remaining real estate evenly among total project weeks.
+        const availableWidth = window.innerWidth - 40; 
+        const chartTimelineWidth = availableWidth - 160;
+        const calculatedColumnWidth = Math.max(35, Math.floor(chartTimelineWidth / (totalProjectWeeks + 2)));
+
+        // Initialize and render the Gantt chart
         const gantt = new Gantt("#gantt", processedTasks, {
-            header_height: 50,
-            column_width: 40,
+            header_height: 45,
+            column_width: calculatedColumnWidth,
             step: 24,
             view_mode: 'Week', 
             bar_height: 25,
@@ -139,14 +150,14 @@
             arrow_curve: 5,
             padding: 18,
             date_format: 'YYYY-MM-DD',
-            // Custom label formatter to display clean, simple structural metrics
+            // Custom label text completely free of dates
             custom_popup_html: function(task) {
                 const original = taskMap[task.id];
                 return `
-                    <div class="details-container" style="padding: 12px; font-size: 13px;">
-                        <h5>${task.name}</h5>
-                        <p><strong>Duration:</strong> ${original.durationWeeks} weeks</p>
-                        <p><strong>Progress:</strong> ${task.progress}%</p>
+                    <div class="details-container" style="padding: 10px; font-size: 13px; font-family: sans-serif;">
+                        <h5 style="margin:0 0 5px 0;">${task.name}</h5>
+                        <p style="margin:3px 0;"><strong>Duration:</strong> ${original.durationWeeks} weeks</p>
+                        <p style="margin:3px 0;"><strong>Progress:</strong> ${task.progress}%</p>
                     </div>
                 `;
             }
