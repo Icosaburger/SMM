@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Fixed Relative Gantt Chart</title>
+    <title>Dynamic Relative Gantt Chart</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/frappe-gantt/0.6.1/frappe-gantt.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/frappe-gantt/0.6.1/frappe-gantt.min.js"></script>
     <style>
@@ -44,18 +44,18 @@
            COMPLETE CALENDAR DATE REMOVAL & WEEK NUMBER GENERATOR
            ========================================================================= */
         
-        /* 1. Hide both standard text rows (removes all dates and months completely) */
+        /* Hide both standard text rows (removes all calendar dates and months completely) */
         .gantt .grid-header .upper-text,
         .gantt .grid-header .lower-text {
             display: none !important;
         }
 
-        /* 2. Set up a CSS counter on the header row container */
+        /* Set up a CSS counter on the header row container */
         .gantt .grid-header {
             counter-reset: week-counter -1; /* Starts counting from Week 0 */
         }
 
-        /* 3. Target the underlying column grid lines to inject sequential week text */
+        /* Target the underlying column grid lines to inject sequential week text */
         .gantt .grid .tick {
             counter-increment: week-counter;
         }
@@ -90,7 +90,18 @@
         ];
         // =========================================================================
 
-        const BASE_DATE = new Date(); 
+        // Automatically anchor to the start of the current week (Monday)
+        function getStartOfWeek() {
+            const today = new Date();
+            const day = today.getDay();
+            // Adjust day index so Monday = 0, Tuesday = 1... Sunday = 6
+            const diff = today.getDate() - day + (day === 0 ? -6 : 1); 
+            const monday = new Date(today.setDate(diff));
+            monday.setHours(0, 0, 0, 0); // Normalize time string elements
+            return monday;
+        }
+
+        const BASE_DATE = getStartOfWeek(); 
 
         function addDays(date, days) {
             const result = new Date(date);
@@ -122,6 +133,11 @@
                 startCalculatedDate = addDays(BASE_DATE, task.startWeek * 7);
             }
 
+            // GUARANTEE NO PAST ENTRIES: Force start date to be today/BASE_DATE or later
+            if (startCalculatedDate < BASE_DATE) {
+                startCalculatedDate = new Date(BASE_DATE);
+            }
+
             const endCalculatedDate = addDays(startCalculatedDate, task.durationWeeks * 7);
 
             task._rawStart = startCalculatedDate;
@@ -151,3 +167,26 @@
 
         // Initialize the layout
         const gantt = new Gantt("#gantt", processedTasks, {
+            header_height: 40,
+            column_width: fitColumnWidth,
+            step: 24,
+            view_mode: 'Week', 
+            bar_height: 20,
+            bar_corner_radius: 4,
+            arrow_curve: 5,
+            padding: 15,
+            date_format: 'YYYY-MM-DD',
+            custom_popup_html: function(task) {
+                const original = taskMap[task.id];
+                return `
+                    <div class="details-container" style="padding: 10px; font-size: 13px;">
+                        <h5 style="margin:0 0 5px 0; color:#172b4d;">${task.name}</h5>
+                        <p style="margin:3px 0; color:#42526e;"><strong>Duration:</strong> ${original.durationWeeks} weeks</p>
+                        <p style="margin:3px 0; color:#42526e;"><strong>Progress:</strong> ${task.progress}%</p>
+                    </div>
+                `;
+            }
+        });
+    </script>
+</body>
+</html>
