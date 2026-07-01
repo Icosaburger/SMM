@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SEM Training Timeline Matrix</title>
+    <title>Training Timeline Matrix</title>
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
@@ -24,17 +24,56 @@
             overflow: hidden;
         }
 
-        /* Group Header Section */
+        /* Accordion Header Section */
         .group-header {
             background-color: #ebecf0;
             color: #172b4d;
             font-weight: 700;
-            font-size: 12px;
-            padding: 6px 10px;
+            font-size: 13px;
+            padding: 8px 12px;
             text-transform: uppercase;
             letter-spacing: 0.5px;
             margin-top: 15px;
             border-radius: 4px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            transition: background-color 0.2s ease;
+        }
+
+        .group-header:hover {
+            background-color: #dfe1e6;
+        }
+
+        /* Accordion Indicator Arrow */
+        .accordion-arrow {
+            display: inline-block;
+            width: 0;
+            height: 0;
+            border-left: 5px solid transparent;
+            border-right: 5px solid transparent;
+            border-top: 5px solid #172b4d;
+            transition: transform 0.2s ease;
+        }
+
+        .collapsed .accordion-arrow {
+            transform: rotate(-90deg);
+        }
+
+        /* Collapsible Row Container */
+        .section-rows-container {
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out, opacity 0.2s ease-out;
+        }
+
+        .section-rows-container.collapsed {
+            max-height: 0 !important;
+            opacity: 0;
+            pointer-events: none;
         }
 
         /* Legend Component Styling */
@@ -87,14 +126,10 @@
             color: #4a5568;
         }
 
-        .gantt-row:last-child {
-            border-bottom: none;
-        }
-
         /* Column Settings */
         .label-column {
-            width: 260px;
-            min-width: 260px;
+            width: 280px;
+            min-width: 280px;
             font-size: 13px;
             font-weight: 500;
             color: #1a202c;
@@ -183,107 +218,125 @@
 
     <script>
         // =========================================================================
-        // RAW IMPORT DATA MATRIX (EASY TO COPY/PASTE OR AMEND)
+        // RAW IMPORT DATA BY SECTION
         // =========================================================================
         const HEX_WAIT = '#ffccd5';
         const HEX_CAT2 = '#3b82f6';
         const HEX_RSLT = '#10b981';
 
-        const rawImportData = [
-            { technique: "SEM Imaging", prereq: "None", wait: 2, cat2: 1, results: 4 },
-            { technique: "FIB-SEM Basic", prereq: "Meaningful Results in SEM Imaging", wait: 3, cat2: 3, results: 8 },
-            { technique: "EDS - Qualitative", prereq: "Meaningful Results in SEM Imaging", wait: 0, cat2: 1, results: 4 },
-            { technique: "STEM/Low kV backscatter", prereq: "Meaningful Results in SEM Imaging", wait: 0, cat2: 1, results: 4 },
-            { technique: "Standard EBSD", prereq: "Category 2 in SEM Imaging", wait: 2, cat2: 2, results: 8 },
-            { technique: "Transmission EBSD (TKD)", prereq: "Category 2 in SEM Imaging", wait: 2, cat2: 3, results: 12 },
-            { technique: "In-situ techniques - SEM", prereq: "Meaningful Results in SEM Imaging", wait: 2, cat2: 2, results: 10 },
-            { technique: "In-situ techniques - EBSD", prereq: "Meaningful Results in Standard EBSD", wait: 2, cat2: 2, results: 10 },
-            { technique: "In-situ techniques - TKD", prereq: "Meaningful Results in Transmission EBSD (TKD)", wait: 2, cat2: 2, results: 10 },
-            { technique: "FIB-SEM Basics", prereq: "Meaningful Results in SEM Imaging", wait: 0, cat2: 0, results: 0 },
-            { technique: "FIB-SEM TEM Sample Prep", prereq: "Category 2 in FIB-SEM Basics", wait: 0, cat2: 2, results: 6 },
-            { technique: "FIB-SEM Nanopillar Prep", prereq: "Category 2 in FIB-SEM Basics", wait: 0, cat2: 3, results: 8 },
-            { technique: "FIB-SEM APT Prep - shaping", prereq: "Category 2 in FIB-SEM Basics", wait: 0, cat2: 2, results: 6 },
-            { technique: "FIB-SEM APT Prep - site specific with lift out", prereq: "Meaningful Results in FIB-SEM Basics", wait: 3, cat2: 4, results: 12 },
-            { technique: "FIB-SEM 3D EDS", prereq: "Meaningful Results in FIB-SEM Basics", wait: 3, cat2: 2, results: 8 },
-            { technique: "FIB-SEM 3D EBSD", prereq: "Meaningful Results in FIB-SEM Basics", wait: 3, cat2: 3, results: 10 },
-            { technique: "FIB-SEM Slice & View", prereq: "Meaningful Results in FIB-SEM Basics", wait: 3, cat2: 1, results: 6 }
+        const sectionsData = [
+            {
+                sectionTitle: "SEM SECTION",
+                items: [
+                    { technique: "SEM Imaging", prereq: "None", wait: 2, cat2: 1, results: 4 },
+                    { technique: "FIB-SEM Basic", prereq: "Meaningful Results in SEM Imaging", wait: 3, cat2: 3, results: 8 },
+                    { technique: "EDS - Qualitative", prereq: "Meaningful Results in SEM Imaging", wait: 0, cat2: 1, results: 4 },
+                    { technique: "STEM/Low kV backscatter", prereq: "Meaningful Results in SEM Imaging", wait: 0, cat2: 1, results: 4 },
+                    { technique: "Standard EBSD", prereq: "Category 2 in SEM Imaging", wait: 2, cat2: 2, results: 8 },
+                    { technique: "Transmission EBSD (TKD)", prereq: "Category 2 in SEM Imaging", wait: 2, cat2: 3, results: 12 },
+                    { technique: "In-situ techniques - SEM", prereq: "Meaningful Results in SEM Imaging", wait: 2, cat2: 2, results: 10 },
+                    { technique: "In-situ techniques - EBSD", prereq: "Meaningful Results in Standard EBSD", wait: 2, cat2: 2, results: 10 },
+                    { technique: "In-situ techniques - TKD", prereq: "Meaningful Results in Transmission EBSD (TKD)", wait: 2, cat2: 2, results: 10 },
+                    { technique: "FIB-SEM Basics", prereq: "Meaningful Results in SEM Imaging", wait: 0, cat2: 0, results: 0 },
+                    { technique: "FIB-SEM TEM Sample Prep", prereq: "Category 2 in FIB-SEM Basics", wait: 0, cat2: 2, results: 6 },
+                    { technique: "FIB-SEM Nanopillar Prep", prereq: "Category 2 in FIB-SEM Basics", wait: 0, cat2: 3, results: 8 },
+                    { technique: "FIB-SEM APT Prep - shaping", prereq: "Category 2 in FIB-SEM Basics", wait: 0, cat2: 2, results: 6 },
+                    { technique: "FIB-SEM APT Prep - site specific with lift out", prereq: "Meaningful Results in FIB-SEM Basics", wait: 3, cat2: 4, results: 12 },
+                    { technique: "FIB-SEM 3D EDS", prereq: "Meaningful Results in FIB-SEM Basics", wait: 3, cat2: 2, results: 8 },
+                    { technique: "FIB-SEM 3D EBSD", prereq: "Meaningful Results in FIB-SEM Basics", wait: 3, cat2: 3, results: 10 },
+                    { technique: "FIB-SEM Slice & View", prereq: "Meaningful Results in FIB-SEM Basics", wait: 3, cat2: 1, results: 6 }
+                ]
+            },
+            {
+                sectionTitle: "TEM SECTION",
+                items: [
+                    { technique: "Low Mag TEM Imaging", prereq: "None", wait: 1, cat2: 2, results: 4 },
+                    { technique: "High Resolution TEM Imaging", prereq: "None", wait: 2, cat2: 2, results: 8 },
+                    { technique: "Electron Diffraction", prereq: "Meaningful Results in High Resolution TEM Imaging", wait: 0, cat2: 1, results: 6 },
+                    { technique: "EDS", prereq: "Meaningful Results in High Resolution TEM Imaging", wait: 0, cat2: 1, results: 4 },
+                    { technique: "STEM", prereq: "Meaningful Results in High Resolution TEM Imaging", wait: 0, cat2: 2, results: 8 },
+                    { technique: "EELS", prereq: "Meaningful Results in High Resolution TEM Imaging", wait: 0, cat2: 2, results: 8 },
+                    { technique: "Tomography", prereq: "Meaningful Results in High Resolution TEM Imaging", wait: 0, cat2: 2, results: 12 },
+                    { technique: "In-situ experiments", prereq: "Meaningful Results in High Resolution TEM Imaging", wait: 0, cat2: 2, results: 6 },
+                    { technique: "Cryo-TEM", prereq: "Meaningful Results in High Resolution TEM Imaging", wait: 0, cat2: 3, results: 8 }
+                ]
+            }
         ];
         // =========================================================================
 
-        const processedTracks = [];
         const trackMap = {};
         let maxWeekReached = 0;
 
-        // Step 1: Parse table rules & calculate relative anchors dynamically
-        rawImportData.forEach(item => {
-            let currentStart = 0;
+        // Step 1: Flatten dependencies and pre-calculate phase blocks globally across all sections
+        sectionsData.forEach(section => {
+            section.items.forEach(item => {
+                let currentStart = 0;
 
-            // Handle relational parsing strings safely
-            if (item.prereq && item.prereq !== "None") {
-                let targetTechnique = "";
-                let targetMilestone = "";
+                if (item.prereq && item.prereq !== "None") {
+                    let targetTechnique = "";
+                    let targetMilestone = "";
 
-                if (item.prereq.startsWith("Meaningful Results in ")) {
-                    targetTechnique = item.prereq.replace("Meaningful Results in ", "").trim();
-                    targetMilestone = "results";
-                } else if (item.prereq.startsWith("Category 2 in ")) {
-                    targetTechnique = item.prereq.replace("Category 2 in ", "").trim();
-                    targetMilestone = "cat2";
+                    if (item.prereq.startsWith("Meaningful Results in ")) {
+                        targetTechnique = item.prereq.replace("Meaningful Results in ", "").trim();
+                        targetMilestone = "results";
+                    } else if (item.prereq.startsWith("Category 2 in ")) {
+                        targetTechnique = item.prereq.replace("Category 2 in ", "").trim();
+                        targetMilestone = "cat2";
+                    }
+
+                    const parent = trackMap[targetTechnique];
+                    if (parent) {
+                        currentStart = parent._milestones[targetMilestone] || 0;
+                    }
                 }
 
-                const parent = trackMap[targetTechnique];
-                if (parent) {
-                    currentStart = parent._milestones[targetMilestone] || 0;
+                const w = item.wait || 0;
+                const c = item.cat2 || 0;
+                const r = item.results || 0;
+
+                const calculatedPhases = [];
+                let cursor = currentStart;
+
+                if (w > 0) {
+                    calculatedPhases.push({ start: cursor, end: cursor + w, duration: w, color: HEX_WAIT });
+                    cursor += w;
                 }
-            }
-
-            const w = item.wait || 0;
-            const c = item.cat2 || 0;
-            const r = item.results || 0;
-
-            const calculatedPhases = [];
-            let cursor = currentStart;
-
-            if (w > 0) {
-                calculatedPhases.push({ start: cursor, end: cursor + w, duration: w, color: HEX_WAIT });
-                cursor += w;
-            }
-            
-            const cat2Start = cursor;
-            if (c > 0) {
-                calculatedPhases.push({ start: cursor, end: cursor + c, duration: c, color: HEX_CAT2 });
-                cursor += c;
-            }
-            const cat2End = cursor;
-
-            if (r > 0) {
-                calculatedPhases.push({ start: cursor, end: cursor + r, duration: r, color: HEX_RSLT });
-                cursor += r;
-            }
-            const resultsEnd = cursor;
-
-            const trackObj = {
-                name: item.technique,
-                _calculatedPhases: calculatedPhases,
-                _totalEnd: cursor,
-                _milestones: {
-                    cat2: cat2End,       // Completion of Category 2
-                    results: resultsEnd  // Completion of Meaningful Results
+                
+                if (c > 0) {
+                    calculatedPhases.push({ start: cursor, end: cursor + c, duration: c, color: HEX_CAT2 });
+                    cursor += c;
                 }
-            };
+                const cat2End = cursor;
 
-            trackMap[item.technique] = trackObj;
-            processedTracks.push(trackObj);
+                if (r > 0) {
+                    calculatedPhases.push({ start: cursor, end: cursor + r, duration: r, color: HEX_RSLT });
+                    cursor += r;
+                }
+                const resultsEnd = cursor;
 
-            if (cursor > maxWeekReached) {
-                maxWeekReached = cursor;
-            }
+                const trackObj = {
+                    name: item.technique,
+                    _calculatedPhases: calculatedPhases,
+                    _totalEnd: cursor,
+                    _milestones: {
+                        cat2: cat2End,
+                        results: resultsEnd
+                    }
+                };
+
+                trackMap[item.technique] = trackObj;
+                item._processed = trackObj; // Attach back to structural item reference
+
+                if (cursor > maxWeekReached) {
+                    maxWeekReached = cursor;
+                }
+            });
         });
 
         const totalColumnsCount = maxWeekReached;
         const gridContainer = document.getElementById('ganttGrid');
 
-        // Step 2: Render Header
+        // Step 2: Render Main Grid Timeline Header
         let headerHtml = `<div class="gantt-row header"><div class="label-column">Technique</div><div class="timeline-column">`;
         for (let i = 0; i <= totalColumnsCount; i++) {
             headerHtml += `<div class="week-cell">Wk ${i}</div>`;
@@ -291,39 +344,80 @@
         headerHtml += `</div></div>`;
         gridContainer.innerHTML += headerHtml;
 
-        // Step 3: Render Structural Rows
-        let groupRowHtml = `<div class="group-header">SEM SECTION</div>`;
-        gridContainer.innerHTML += groupRowHtml;
+        // Step 3: Render Sections with Collapsible Containers
+        sectionsData.forEach((section, index) => {
+            const sectionId = `section-container-${index}`;
+            const headerId = `section-header-${index}`;
 
-        processedTracks.forEach(track => {
-            let rowHtml = `
-                <div class="gantt-row">
-                    <div class="label-column" title="${track.name}">${track.name}</div>
-                    <div class="timeline-column">
-                        <div class="row-guides">`;
-            
-            for (let i = 0; i <= totalColumnsCount; i++) {
-                rowHtml += `<div class="guide-cell"></div>`;
-            }
-            
-            rowHtml += `</div>`;
+            // Append Clickable Accordion Header Row
+            let groupRowHtml = `
+                <div class="group-header" id="${headerId}" onclick="toggleSection('${sectionId}', '${headerId}')">
+                    <span>${section.sectionTitle}</span>
+                    <span class="accordion-arrow"></span>
+                </div>
+                <div class="section-rows-container" id="${sectionId}">
+            `;
 
-            track._calculatedPhases.forEach(p => {
-                const leftPercent = (p.start / (totalColumnsCount + 1)) * 100;
-                const widthPercent = (p.duration / (totalColumnsCount + 1)) * 100;
+            section.items.forEach(item => {
+                const track = item._processed;
+                let rowHtml = `
+                    <div class="gantt-row">
+                        <div class="label-column" title="${track.name}">${track.name}</div>
+                        <div class="timeline-column">
+                            <div class="row-guides">`;
+                
+                for (let i = 0; i <= totalColumnsCount; i++) {
+                    rowHtml += `<div class="guide-cell"></div>`;
+                }
+                
+                rowHtml += `</div>`;
+
+                track._calculatedPhases.forEach(p => {
+                    const leftPercent = (p.start / (totalColumnsCount + 1)) * 100;
+                    const widthPercent = (p.duration / (totalColumnsCount + 1)) * 100;
+
+                    rowHtml += `
+                        <div class="phase-bar" style="left: ${leftPercent}%; width: ${widthPercent}%; background-color: ${p.color};">
+                        </div>
+                    `;
+                });
 
                 rowHtml += `
-                    <div class="phase-bar" style="left: ${leftPercent}%; width: ${widthPercent}%; background-color: ${p.color};">
+                        </div>
                     </div>
                 `;
+                groupRowHtml += rowHtml;
             });
 
-            rowHtml += `
-                    </div>
-                </div>
-            `;
-            gridContainer.innerHTML += rowHtml;
+            groupRowHtml += `</div>`; // Close row wrapper container
+            gridContainer.innerHTML += groupRowHtml;
         });
+
+        // Initialize and lock correct flex height parameters for smooth animation behaviors
+        document.addEventListener("DOMContentLoaded", () => {
+            sectionsData.forEach((_, index) => {
+                const container = document.getElementById(`section-container-${index}`);
+                if(container) {
+                    container.style.maxHeight = container.scrollHeight + "px";
+                }
+            });
+        });
+
+        // JavaScript Accordion Toggle Function
+        function toggleSection(containerId, headerId) {
+            const container = document.getElementById(containerId);
+            const header = document.getElementById(headerId);
+
+            if (container.classList.contains('collapsed')) {
+                container.classList.remove('collapsed');
+                header.classList.remove('collapsed');
+                container.style.maxHeight = container.scrollHeight + "px";
+            } else {
+                container.style.maxHeight = "0px";
+                container.classList.add('collapsed');
+                header.classList.add('collapsed');
+            }
+        }
     </script>
 </body>
 </html>
