@@ -229,7 +229,7 @@
                 ]
             },
             {
-                groupName: "Laser Optics (LO)",
+                groupName: "Light Optical (LO)",
                 tracks: [
                     {
                         id: 'lo-basic',
@@ -251,7 +251,7 @@
                         startWeek: 0,
                         dependsOn: 'lo-basic',
                         relativeTo: 'phase-finish', // Hooks directly into a single phase milestone
-                        relativeToPhase: 'Training', // Targets completion of Core Training (Wk 4)
+                        relativeToPhase: 'Advanced', // Targets completion of Advanced Training (Wk 4)
                         offsetWeeks: 1,              // Delays it to start 1 week later (Wk 5)
                         phases: [
                             { name: 'Training', duration: 4, color: HEX_CORE },
