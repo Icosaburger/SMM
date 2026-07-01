@@ -19,6 +19,7 @@ const sectionsData = [
             { 
                 technique: "Exact Name of Technique", 
                 prereq: "None", 
+                offset: 0,
                 wait: 0, 
                 cat2: 0, 
                 results: 0 
@@ -35,6 +36,7 @@ const sectionsData = [
 | sectionTitle | String (e.g., "XRM SECTION") | Creates a sticky, full-width accordion header block. |
 | technique | String (e.g., "SEM Imaging") | Displays as the left-hand text label. Must be unique if used as a prerequisite elsewhere. |
 | prereq | String ("None", or explicit milestone string) | Defines the scheduling trigger point for this specific line block. |
+| offset | Integer (Weeks) | Allows for offset values to be applied (optional)
 | wait | Integer (Weeks) | Renders a Light Pink Bar. Represents processing/onboarding latency. |
 | cat2 | Integer (Weeks) | Renders a Blue Bar. Represents core technical instruction tracks. |
 | results | Integer (Weeks) | Renders a Green Bar. Represents independent user capability testing. |
