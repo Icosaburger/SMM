@@ -264,7 +264,7 @@
 
         const sectionsData = [
             {
-                sectionTitle: "SEM SECTION",
+                sectionTitle: "SEM MATERIALS SECTION",
                 items: [
                     { technique: "SEM Imaging", prereq: "None", wait: 2, cat2: 1, results: 4 },
                     { technique: "FIB-SEM Basics", prereq: "Meaningful Results in SEM Imaging", wait: 3, cat2: 3, results: 8 },
@@ -285,7 +285,7 @@
                 ]
             },
             {
-                sectionTitle: "TEM SECTION",
+                sectionTitle: "TEM MATERIALS SECTION",
                 items: [
                     { technique: "Low Mag TEM Imaging", prereq: "None", wait: 1, cat2: 2, results: 4 },
                     { technique: "High Resolution TEM Imaging", prereq: "None", wait: 2, cat2: 2, results: 8 },
@@ -294,12 +294,11 @@
                     { technique: "STEM", prereq: "Meaningful Results in High Resolution TEM Imaging", wait: 0, cat2: 2, results: 8 },
                     { technique: "EELS", prereq: "Meaningful Results in High Resolution TEM Imaging", wait: 0, cat2: 2, results: 8 },
                     { technique: "Tomography", prereq: "Meaningful Results in High Resolution TEM Imaging", wait: 0, cat2: 2, results: 12 },
-                    { technique: "In-situ experiments", prereq: "Meaningful Results in High Resolution TEM Imaging", wait: 0, cat2: 2, results: 6 },
-                    { technique: "Cryo-TEM", prereq: "Meaningful Results in High Resolution TEM Imaging", wait: 0, cat2: 3, results: 8 }
+                    { technique: "In-situ experiments", prereq: "Meaningful Results in High Resolution TEM Imaging", wait: 0, cat2: 2, results: 6 }
                 ]
             },
             {
-                sectionTitle: "BIOLOGICAL SPECIMEN PREPARATION SECTION",
+                sectionTitle: "BIO-EM SECTION",
                 items: [
                     { technique: "SEM Sample Preparation", prereq: "None", wait: 1, cat2: 1, results: 4 },
                     { technique: "TEM Sample Preparation", prereq: "None", wait: 1, cat2: 3, results: 4 },
@@ -309,7 +308,8 @@
                     { technique: "Automatic Freeze Substitution", prereq: "None", wait: 0, cat2: 1, results: 2 },
                     { technique: "Cryo-ultramicrotomy", prereq: "None", wait: 0, cat2: 2, results: 8 },
                     { technique: "Vitrobot", prereq: "None", wait: 0, cat2: 2, results: 6 },
-                    { technique: "Formvar Grid Casting", prereq: "None", wait: 0, cat2: 2, results: 0 }
+                    { technique: "Formvar Grid Casting", prereq: "None", wait: 0, cat2: 2, results: 0 },
+                    { technique: "Cryo-TEM", prereq: "Meaningful Results in High Resolution TEM Imaging", wait: 0, cat2: 3, results: 8 }
                 ]
             },
             {
